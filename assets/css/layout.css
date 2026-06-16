@@ -1,1 +1,58 @@
-/* Grid y estructura de página */
+/* ============================================================
+   layout.css — Estructura de página: header, contenedor, main
+   ============================================================ */
+
+.contenedor {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* --- Header --- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: saturate(140%) blur(10px);
+  background: rgba(255, 255, 255, .78);
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.app-header__inner {
+  padding: 14px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.marca { display: flex; align-items: center; gap: 12px; }
+.marca__texto { line-height: 1; }
+.marca__nombre {
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--color-profundo);
+  letter-spacing: .2px;
+}
+.marca__sub {
+  font-size: 12px;
+  color: #5d8090;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+/* --- Main --- */
+.app-main {
+  padding: 26px 22px 64px;
+}
+
+/* --- Utilidad de cabecera de sección --- */
+.seccion-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}

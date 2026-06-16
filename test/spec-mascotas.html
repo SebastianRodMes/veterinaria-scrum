@@ -3,6 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Spec — Mascotas</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; color: #1d3b46; }
+    li { margin: 4px 0; }
+    .ok::before   { content: '✔ '; color: #16a34a; }
+    .fail::before { content: '✘ '; color: #e0457b; }
+    .fail { color: #e0457b; font-weight: 700; }
+  </style>
 </head>
 <body>
   <h1>Spec del módulo de mascotas</h1>
@@ -10,7 +17,33 @@
   <script src="../assets/js/lib/storage.js"></script>
   <script src="../assets/js/modules/mascotas.js"></script>
   <script>
-    // Specs auto-ejecutables — verificar interfaz pública de mascotas
+    const salida = document.getElementById('resultados');
+    function it(nombre, fn) {
+      const li = document.createElement('li');
+      try { fn(); li.className = 'ok'; li.textContent = nombre; }
+      catch (err) { li.className = 'fail'; li.textContent = nombre + ' — ' + err.message; }
+      salida.appendChild(li);
+    }
+    function assert(cond, msg) { if (!cond) throw new Error(msg || 'aserción fallida'); }
+
+    Storage.eliminar('mascotas');
+
+    it('listar() arranca vacío', () => {
+      assert(Mascotas.listar().length === 0, 'sin mascotas registradas al inicio');
+    });
+
+    it('registrar() guarda nombre y motivo recortando espacios', () => {
+      const r = Mascotas.registrar({ nombre: '  Toby  ', motivo: 'Vacunación' });
+      assert(r.nombre === 'Toby', 'el nombre debe quedar sin espacios sobrantes');
+      assert(r.motivo === 'Vacunación', 'el motivo debe conservarse');
+    });
+
+    it('registrar() persiste y acumula registros', () => {
+      Mascotas.registrar({ nombre: 'Luna', motivo: 'Control' });
+      assert(Mascotas.listar().length === 2, 'deben acumularse las mascotas registradas');
+    });
+
+    Storage.eliminar('mascotas');
   </script>
 </body>
 </html>

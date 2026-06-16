@@ -1,1 +1,80 @@
-/* CSS reset y variables */
+/* ============================================================
+   base.css — Reset, variables de diseño y tipografía
+   Paleta océano (azul/cian) del diseño "Pet App".
+   ============================================================ */
+
+:root {
+  /* --- Paleta principal --- */
+  --color-profundo: #03045e;   /* deep twilight */
+  --color-primario: #0077b6;   /* bright teal blue */
+  --color-acento:   #00b4d8;   /* turquoise surf */
+  --color-frost:    #90e0ef;   /* frosted blue */
+  --color-cyan:     #caf0f8;   /* light cyan */
+
+  /* --- Estados de consulta --- */
+  --estado-pendiente: #f0a500;
+  --estado-progreso:  #00b4d8;
+  --estado-done:      #16a34a;
+
+  /* --- Texto --- */
+  --texto-fuerte: #03045e;
+  --texto-base:   #1d3b46;
+  --texto-suave:  #516f7c;
+  --texto-tenue:  #6b8a96;
+  --texto-mudo:   #7c9aa6;
+  --texto-error:  #e0457b;
+
+  /* --- Superficies y bordes --- */
+  --fondo-app:   #eef7fb;
+  --superficie:  #ffffff;
+  --superficie-suave: #f7fcfe;
+  --borde:       #e6eff3;
+  --borde-suave: #dcecf3;
+
+  /* --- Degradados --- */
+  --grad-primario: linear-gradient(135deg, var(--color-primario), var(--color-acento));
+  --grad-fondo: radial-gradient(1200px 600px at 100% -10%, #d8f1f9 0%, rgba(216,241,249,0) 55%),
+                radial-gradient(900px 500px at -10% 110%, #e3f3ee 0%, rgba(227,243,238,0) 50%),
+                var(--fondo-app);
+
+  /* --- Tipografía --- */
+  --fuente-titulo: 'Fredoka', system-ui, sans-serif;
+  --fuente-texto:  'Nunito', system-ui, sans-serif;
+
+  /* --- Radios y sombras --- */
+  --radio-sm: 12px;
+  --radio-md: 18px;
+  --radio-lg: 24px;
+  --sombra-card: 0 14px 36px -30px rgba(3, 4, 94, .4);
+  --sombra-flotante: 0 18px 40px -28px rgba(3, 4, 94, .28);
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background: var(--grad-fondo);
+  font-family: var(--fuente-texto);
+  color: var(--texto-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  color: var(--texto-fuerte);
+  margin: 0;
+}
+
+a { color: inherit; }
+
+::placeholder { color: #9bb6c0; }
+
+/* --- Animaciones --- */
+@keyframes floaty  { 0%, 100% { transform: translateY(0); }  50% { transform: translateY(-12px); } }
+@keyframes floaty2 { 0%, 100% { transform: translateY(0); }  50% { transform: translateY(9px); } }
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes checkPop { 0% { transform: scale(0); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
