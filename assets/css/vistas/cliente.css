@@ -1,1 +1,130 @@
-/* Estilos de la vista del cliente */
+/* ============================================================
+   vistas/cliente.css — Hero, horarios, formulario y resumen
+   ============================================================ */
+
+/* --- Hero --- */
+.hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+  align-items: center;
+  background: linear-gradient(120deg, #ffffff 0%, #f3fbfe 100%);
+  border: 1px solid #e3eef3;
+  border-radius: 26px;
+  padding: 30px;
+  margin-bottom: 26px;
+  overflow: hidden;
+  box-shadow: var(--sombra-flotante);
+}
+.hero__titulo {
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.08;
+  margin: 16px 0 10px;
+}
+.hero__texto {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--texto-suave);
+  max-width: 440px;
+  margin: 0;
+}
+.hero__stats { display: flex; gap: 22px; margin-top: 22px; flex-wrap: wrap; }
+.hero__stat-num { font-family: var(--fuente-titulo); font-size: 24px; color: var(--color-primario); font-weight: 600; }
+.hero__stat-lbl { font-size: 13px; color: #6b8a96; font-weight: 600; }
+.hero__sep { width: 1px; background: #e1eef3; }
+
+/* Gráfico decorativo plano */
+.hero__art { position: relative; height: 240px; display: flex; align-items: center; justify-content: center; }
+.hero__circulo { position: absolute; width: 210px; height: 210px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--color-cyan), var(--color-frost)); }
+.hero__floty { position: absolute; }
+.hero__floty--1 { top: 18px; right: 34px; width: 34px; height: 34px; border-radius: 11px; background: var(--color-acento); animation: floaty 4.5s ease-in-out infinite; box-shadow: 0 8px 16px -6px rgba(0,180,216,.6); }
+.hero__floty--2 { bottom: 26px; left: 30px; width: 22px; height: 22px; border-radius: 50%; background: var(--color-primario); animation: floaty2 5s ease-in-out infinite; }
+.hero__floty--3 { bottom: 54px; right: 18px; width: 14px; height: 14px; border-radius: 50%; background: var(--color-profundo); animation: floaty 6s ease-in-out infinite; }
+.hero__huella { position: relative; width: 120px; height: 120px; }
+.hero__huella span { position: absolute; }
+.hero__huella .palma { left: 29px; top: 48px; width: 62px; height: 48px; border-radius: 50% 50% 48% 48%; background: var(--color-profundo); }
+.hero__huella .dedo { width: 24px; height: 30px; border-radius: 50%; background: var(--color-primario); }
+.hero__huella .dedo--1 { left: 8px; top: 26px; }
+.hero__huella .dedo--2 { left: 36px; top: 8px; }
+.hero__huella .dedo--3 { left: 64px; top: 8px; }
+.hero__huella .dedo--4 { left: 90px; top: 26px; }
+
+/* --- Horarios disponibles --- */
+.horarios { margin-bottom: 24px; }
+.leyenda { display: flex; gap: 16px; font-size: 12.5px; font-weight: 700; color: #5d8090; flex-wrap: wrap; }
+.leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.leyenda i { width: 12px; height: 12px; border-radius: 4px; }
+.leyenda .libre    { background: #fff; border: 1.5px solid #bfe6f2; }
+.leyenda .sel      { background: var(--color-acento); }
+.leyenda .ocupado  { background: #eef4f6; }
+
+.dias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+.dia {
+  background: var(--superficie-suave);
+  border: 1px solid #e6f2f7;
+  border-radius: 18px;
+  padding: 16px 14px;
+}
+.dia__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.dia__label { font-family: var(--fuente-titulo); font-weight: 600; font-size: 16px; color: var(--color-profundo); }
+.dia__fecha { font-size: 12px; font-weight: 700; color: var(--texto-mudo); }
+.dia__slots { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+
+.slot {
+  padding: 10px 4px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: var(--fuente-texto);
+  text-align: center;
+  border: 1.5px solid;
+  transition: all .15s;
+}
+.slot--libre { background: #fff; border-color: #bfe6f2; color: var(--color-primario); cursor: pointer; }
+.slot--libre:hover { border-color: var(--color-acento); }
+.slot--sel { background: var(--grad-primario); border-color: transparent; color: #fff; box-shadow: 0 8px 18px -7px rgba(0,119,182,.65); cursor: pointer; }
+.slot--ocupado { background: #eef4f6; border-color: #eef4f6; color: #aebfc6; text-decoration: line-through; cursor: not-allowed; }
+
+/* --- Formulario + resumen --- */
+.cita-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+.cita-form__campos { display: flex; flex-direction: column; gap: 17px; margin-top: 22px; }
+.cita-form__doble { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* Resumen lateral */
+.resumen {
+  background: linear-gradient(155deg, #03045e 0%, #0077b6 100%);
+  border-radius: 24px;
+  padding: 26px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 44px -26px rgba(3, 4, 94, .7);
+}
+.resumen__blob { position: absolute; border-radius: 50%; }
+.resumen__blob--1 { top: -40px; right: -30px; width: 150px; height: 150px; background: rgba(255,255,255,.07); }
+.resumen__blob--2 { bottom: -50px; left: -20px; width: 120px; height: 120px; background: rgba(0,180,216,.25); }
+.resumen__inner { position: relative; }
+.resumen__eyebrow { font-weight: 800; font-size: 12.5px; letter-spacing: .4px; color: #9fdcef; }
+.resumen__lista { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; }
+.resumen__item { display: flex; align-items: center; gap: 13px; }
+.resumen__icono { width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+.resumen__rotulo { font-size: 12px; color: #a9d9e8; font-weight: 700; }
+.resumen__valor { font-family: var(--fuente-titulo); font-size: 18px; font-weight: 500; }
+.resumen__nota {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,.16);
+  font-size: 13px;
+  color: #bfe6f2;
+  line-height: 1.5;
+  font-weight: 600;
+}

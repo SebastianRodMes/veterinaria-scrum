@@ -1,1 +1,96 @@
-/* Estilos del panel de administración */
+/* ============================================================
+   vistas/admin.css — Panel de citas, contadores y tabla FIFO
+   ============================================================ */
+
+.admin-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.admin-head__titulo { font-size: clamp(26px, 3.4vw, 34px); margin: 0 0 6px; }
+.admin-head__sub { margin: 0; color: var(--texto-tenue); font-size: 15px; font-weight: 600; }
+
+/* Contadores */
+.contadores { display: flex; gap: 12px; flex-wrap: wrap; }
+.contador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  padding: 10px 16px;
+}
+.contador__dot { width: 11px; height: 11px; border-radius: 50%; }
+.contador__dot--pending { background: var(--estado-pendiente); }
+.contador__dot--progreso { background: var(--estado-progreso); }
+.contador__dot--done { background: var(--estado-done); }
+.contador__num { font-weight: 800; color: var(--color-profundo); font-size: 18px; font-family: var(--fuente-titulo); }
+.contador__lbl { font-weight: 700; color: var(--texto-tenue); font-size: 13px; }
+
+/* Tabla */
+.tabla-wrap {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 22px;
+  padding: 8px;
+  box-shadow: var(--sombra-card);
+  overflow: hidden;
+}
+.tabla-scroll { overflow-x: auto; }
+.tabla { min-width: 720px; }
+
+.tabla__head,
+.tabla__fila {
+  display: grid;
+  grid-template-columns: 64px 96px 1.4fr 1fr 1.3fr 150px;
+  gap: 12px;
+  align-items: center;
+}
+.tabla__head {
+  padding: 14px 18px;
+  color: var(--texto-mudo);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+.tabla__grupo-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px 10px;
+}
+.tabla__grupo-fecha { font-family: var(--fuente-titulo); font-weight: 600; font-size: 15px; color: var(--color-profundo); }
+.tabla__grupo-linea { height: 1px; flex: 1; background: linear-gradient(90deg, #dcecf3, transparent); }
+.tabla__grupo-count { font-size: 12px; font-weight: 700; color: #9bb6c0; }
+
+.tabla__fila { padding: 13px 18px; border-top: 1px solid #eef4f7; }
+.tabla__cola {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: #eaf3f8;
+  color: #3a6072;
+  font-weight: 800;
+  font-family: var(--fuente-titulo);
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tabla__hora { font-weight: 800; color: var(--color-profundo); font-family: var(--fuente-titulo); font-size: 15px; }
+.tabla__cliente { font-weight: 700; color: #28505d; }
+.tabla__mascota { display: flex; align-items: center; gap: 9px; color: #445566; font-weight: 700; }
+.tabla__mascota-ico { width: 28px; height: 28px; border-radius: 9px; background: #eaf6fb; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; }
+.tabla__motivo { color: #5d7a86; font-weight: 600; font-size: 14px; }
+
+.admin-ayuda { margin: 14px 4px 0; color: #8aa4b0; font-size: 12.5px; font-weight: 600; }
+.admin-vacio {
+  text-align: center;
+  padding: 40px 18px;
+  color: var(--texto-tenue);
+  font-weight: 600;
+}
