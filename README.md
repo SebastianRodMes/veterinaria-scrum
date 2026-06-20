@@ -6,11 +6,11 @@ Sistema de reserva y gestión de consultas para una clínica veterinaria. Permit
 
 | # | Título | Prioridad | Estado | Rol |
 |---|--------|-----------|--------|-----|
-| 1 | Ingreso de mascota | 1 | Backlog | Cliente |
-| 2 | Notificaciones | 1 | Backlog | Cliente |
-| 3 | Ver consultas | 1 | Backlog | Administrador |
-| 4 | Confirmar consulta | 1 | Backlog | Administrador |
-| 5 | Horario de disponibilidades | 2 | Backlog | Cliente |
+| 1 | Ingreso de mascota | 1 | Implementada | Cliente |
+| 2 | Notificaciones | 1 | Implementada | Cliente |
+| 3 | Ver consultas | 1 | Implementada | Administrador |
+| 4 | Confirmar consulta | 1 | Implementada | Administrador |
+| 5 | Horario de disponibilidades | 2 | Implementada | Cliente |
 
 ### 1. Ingreso de mascota
 
@@ -114,10 +114,17 @@ Decisiones de diseño que afecten la estructura del código se registran en `doc
 
 ## Roadmap
 
-1. [ ] Crear scaffolding base (`index.html`, `admin.html`, `assets/css/base.css`)
-2. [ ] Definir `docs/CONTEXT.md` con el glosario del dominio
-3. [ ] Historia 1: Ingreso de mascota — formulario de reserva de consulta
-4. [ ] Historia 5: Horario de disponibilidades — vista de horarios en landing
-5. [ ] Historia 3: Ver consultas — tabla de consultas en panel admin
-6. [ ] Historia 4: Confirmar consulta — flujo de confirmación + asignar fecha/hora
-7. [ ] Historia 2: Notificaciones — aviso visual de cita confirmada
+1. [x] Crear scaffolding base (`index.html`, `admin.html`, `assets/css/base.css`)
+2. [x] Definir `docs/CONTEXT.md` con el glosario del dominio
+3. [x] Historia 1: Ingreso de mascota — formulario de reserva de consulta
+4. [x] Historia 5: Horario de disponibilidades — vista de horarios en landing
+5. [x] Historia 3: Ver consultas — tabla de consultas en panel admin
+6. [x] Historia 4: Confirmar consulta — flujo de confirmación + asignar fecha/hora
+7. [x] Historia 2: Notificaciones — aviso visual de cita confirmada
+
+## Diseño visual
+
+La UI implementa el diseño **"Pet App — Citas Veterinarias"** (handoff de Claude Design):
+estilo plano y amigable, paleta océano azul/cian (`#03045e` → `#caf0f8`), tipografías
+**Fredoka** (títulos) + **Nunito** (texto). El conmutador **Cliente / Admin** del header
+navega entre `index.html` y `admin.html`. Las variables de color viven en `assets/css/base.css`.

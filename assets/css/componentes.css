@@ -1,1 +1,254 @@
-/* Componentes UI reutilizables */
+/* ============================================================
+   componentes.css — Componentes UI reutilizables
+   ============================================================ */
+
+/* --- Logo (huella) --- */
+.logo {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--grad-primario);
+  box-shadow: 0 8px 18px -6px rgba(0, 119, 182, .55);
+  flex-shrink: 0;
+}
+.logo span { position: absolute; background: #fff; }
+.logo__almohadilla { left: 50%; top: 54%; transform: translate(-50%, -50%); width: 13px; height: 10px; border-radius: 50%; }
+.logo__dedo { width: 6px; height: 7px; border-radius: 50%; }
+.logo__dedo--1 { left: 25%; top: 30%; }
+.logo__dedo--2 { left: 43%; top: 24%; }
+.logo__dedo--3 { left: 61%; top: 30%; }
+
+/* --- Conmutador de rol (tabs) --- */
+.tabs {
+  display: flex;
+  padding: 5px;
+  background: #e4eff4;
+  border-radius: 14px;
+  gap: 4px;
+}
+.tab {
+  border: none;
+  cursor: pointer;
+  font-family: var(--fuente-texto);
+  font-weight: 800;
+  font-size: 14px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  transition: all .15s;
+  background: transparent;
+  color: #5d8090;
+}
+.tab--activo {
+  background: #fff;
+  color: var(--color-profundo);
+  box-shadow: 0 4px 10px -4px rgba(3, 4, 94, .25);
+}
+
+/* --- Card --- */
+.card {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  padding: 26px;
+  box-shadow: var(--sombra-card);
+}
+.card__titulo {
+  font-size: 23px;
+  margin: 0 0 4px;
+}
+.card__sub {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+/* --- Botón primario --- */
+.btn-primario {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: var(--grad-primario);
+  color: #fff;
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  font-size: 17px;
+  cursor: pointer;
+  box-shadow: 0 12px 26px -10px rgba(0, 119, 182, .6);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn-primario:hover { transform: translateY(-1px); }
+.btn-primario:active { transform: translateY(0); }
+.btn-primario--plano { font-size: 16px; padding: 13px; box-shadow: none; }
+
+/* --- Pill / chip informativo --- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e9f7fc;
+  color: var(--color-primario);
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  letter-spacing: .3px;
+}
+
+/* --- Inputs --- */
+.campo { display: block; }
+.campo__label {
+  display: block;
+  font-weight: 800;
+  font-size: 13px;
+  color: #28505d;
+  margin-bottom: 7px;
+}
+.campo__control {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid #d6eef5;
+  background: var(--superficie-suave);
+  font-size: 15px;
+  font-family: var(--fuente-texto);
+  font-weight: 600;
+  color: var(--color-profundo);
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.campo__control:focus { border-color: var(--color-acento); }
+.campo__control--error { border-color: #f2a8c4; background: #fff6f9; }
+.campo__error {
+  color: var(--texto-error);
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.alerta-slot {
+  background: #fff5f7;
+  border: 1px solid #ffd5e2;
+  color: var(--texto-error);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 11px 14px;
+  border-radius: 12px;
+}
+
+/* --- Badge de estado --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--fuente-texto);
+  font-weight: 800;
+  font-size: 12.5px;
+}
+.badge__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.badge--pending     { background: #fff3d6; color: #9a6700; }
+.badge--in_progress { background: #d6f2fa; color: #006b84; }
+.badge--done        { background: #dcfce7; color: #15803d; }
+.badge--pending     .badge__dot { background: var(--estado-pendiente); }
+.badge--in_progress .badge__dot { background: var(--estado-progreso); }
+.badge--done        .badge__dot { background: var(--estado-done); }
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(3, 4, 94, .42);
+  backdrop-filter: blur(4px);
+  animation: overlayIn .2s ease;
+}
+.modal {
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  border-radius: 26px;
+  padding: 34px 30px 28px;
+  text-align: center;
+  box-shadow: 0 40px 90px -30px rgba(3, 4, 94, .6);
+  animation: popIn .3s cubic-bezier(.2, .8, .3, 1.2);
+  position: relative;
+  overflow: hidden;
+}
+.modal__blob {
+  position: absolute;
+  top: -50px; left: -30px;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: #eaf8fc;
+}
+.modal__check {
+  width: 78px; height: 78px;
+  border-radius: 50%;
+  margin: 0 auto 18px;
+  background: var(--grad-primario);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 14px 30px -10px rgba(0, 119, 182, .6);
+  animation: checkPop .45s .1s both cubic-bezier(.2, .8, .3, 1.4);
+  color: #fff; font-size: 38px; line-height: 1; font-weight: 700;
+}
+.modal__titulo { font-size: 25px; margin: 0 0 6px; }
+.modal__texto { margin: 0 0 22px; color: var(--texto-tenue); font-size: 14.5px; font-weight: 600; }
+.modal__detalle {
+  text-align: left;
+  background: #f6fbfd;
+  border: 1px solid #e6f2f7;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal__fila { display: flex; justify-content: space-between; gap: 10px; }
+.modal__fila dt { color: var(--texto-mudo); font-weight: 700; font-size: 13.5px; margin: 0; }
+.modal__fila dd { color: var(--color-profundo); font-weight: 800; font-size: 14px; margin: 0; }
+
+/* --- Footer de tokens de diseño --- */
+.tokens {
+  margin-top: 34px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  padding: 20px 24px;
+}
+.tokens__titulo {
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .4px;
+  color: var(--texto-mudo);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.tokens__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+  gap: 14px;
+}
+.token { display: flex; align-items: center; gap: 11px; }
+.token__swatch {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .06);
+}
+.token__nombre {
+  font-weight: 800;
+  font-size: 12.5px;
+  color: #28505d;
+  font-family: ui-monospace, Menlo, monospace;
+  white-space: nowrap;
+}
+.token__hex { font-size: 12px; color: #8aa4b0; font-weight: 600; }
