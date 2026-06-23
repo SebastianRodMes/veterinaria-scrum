@@ -12,9 +12,10 @@
   --color-cyan:     #caf0f8;   /* light cyan */
 
   /* --- Estados de consulta --- */
-  --estado-pendiente: #f0a500;
-  --estado-progreso:  #00b4d8;
-  --estado-done:      #16a34a;
+  --estado-pendiente:  #f0a500;
+  --estado-confirmada: #0077b6;
+  --estado-progreso:   #00b4d8;
+  --estado-done:       #16a34a;
 
   /* --- Texto --- */
   --texto-fuerte: #03045e;

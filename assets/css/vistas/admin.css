@@ -26,6 +26,7 @@
 }
 .contador__dot { width: 11px; height: 11px; border-radius: 50%; }
 .contador__dot--pending { background: var(--estado-pendiente); }
+.contador__dot--confirmed { background: var(--estado-confirmada); }
 .contador__dot--progreso { background: var(--estado-progreso); }
 .contador__dot--done { background: var(--estado-done); }
 .contador__num { font-weight: 800; color: var(--color-profundo); font-size: 18px; font-family: var(--fuente-titulo); }

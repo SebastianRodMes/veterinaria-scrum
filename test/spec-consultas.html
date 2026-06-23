@@ -46,6 +46,33 @@
       assert(Consultas.listar().length === antes + 1, 'debe haber una consulta más');
     });
 
+    it('confirmar() pasa la consulta a estado confirmed', () => {
+      const c = Consultas.reservar({
+        cliente: 'Confirma User', contacto: 'conf@correo.com', mascota: 'Nube',
+        motivo: 'Vacunación', day: { date: 'Lun 16 Jun', rank: 1 }, slot: { time: '12:00' },
+      });
+      const actualizada = Consultas.confirmar(c.id);
+      assert(actualizada && actualizada.status === 'confirmed', 'debe quedar confirmed');
+      const guardada = Consultas.listar().find(x => x.id === c.id);
+      assert(guardada.status === 'confirmed', 'el cambio debe persistir');
+    });
+
+    it('confirmar() reasigna fecha/hora de atención cuando se indican', () => {
+      const c = Consultas.reservar({
+        cliente: 'Reasigna User', contacto: 'rea@correo.com', mascota: 'Sol',
+        motivo: 'Control', day: { date: 'Lun 16 Jun', rank: 1 }, slot: { time: '09:00' },
+      });
+      const actualizada = Consultas.confirmar(c.id, { date: 'Mié 18 Jun', rank: 3, time: '15:30' });
+      assert(actualizada.date === 'Mié 18 Jun', 'debe actualizar la fecha');
+      assert(actualizada.rank === 3, 'debe actualizar el rank');
+      assert(actualizada.time === '15:30', 'debe actualizar la hora');
+    });
+
+    it('contadores() incluye la clave confirmed', () => {
+      const c = Consultas.contadores();
+      assert(Object.prototype.hasOwnProperty.call(c, 'confirmed'), 'debe existir contador confirmed');
+    });
+
     it('avanzarEstado() cicla pending → in_progress → done → pending', () => {
       const id = Consultas.listar()[0].id;
       const estadoDe = () => Consultas.listar().find(c => c.id === id).status;
@@ -74,7 +101,7 @@
 
     it('contadores() suma exactamente el total de consultas', () => {
       const c = Consultas.contadores();
-      const total = c.pending + c.in_progress + c.done;
+      const total = c.pending + c.confirmed + c.in_progress + c.done;
       assert(total === Consultas.listar().length, 'los contadores deben cuadrar con el total');
     });
 
