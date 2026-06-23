@@ -152,11 +152,47 @@
 }
 .badge__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .badge--pending     { background: #fff3d6; color: #9a6700; }
+.badge--confirmed   { background: #dceaf7; color: #035388; }
 .badge--in_progress { background: #d6f2fa; color: #006b84; }
 .badge--done        { background: #dcfce7; color: #15803d; }
 .badge--pending     .badge__dot { background: var(--estado-pendiente); }
+.badge--confirmed   .badge__dot { background: var(--estado-confirmada); }
 .badge--in_progress .badge__dot { background: var(--estado-progreso); }
 .badge--done        .badge__dot { background: var(--estado-done); }
+
+/* --- Botón "Confirmar" (tabla admin) --- */
+.btn-confirmar {
+  border: none;
+  cursor: pointer;
+  font-family: var(--fuente-texto);
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--grad-primario);
+  box-shadow: 0 8px 18px -10px rgba(0, 119, 182, .7);
+  transition: transform .12s ease;
+}
+.btn-confirmar:hover { transform: translateY(-1px); }
+.btn-confirmar:active { transform: translateY(0); }
+
+/* --- Botón secundario (cancelar en modales) --- */
+.btn-secundario {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1.5px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie-suave);
+  color: var(--texto-suave);
+  font-family: var(--fuente-texto);
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.btn-secundario:hover { border-color: var(--color-acento); color: var(--color-profundo); }
 
 /* --- Modal --- */
 .modal-overlay {
@@ -215,6 +251,20 @@
 .modal__fila { display: flex; justify-content: space-between; gap: 10px; }
 .modal__fila dt { color: var(--texto-mudo); font-weight: 700; font-size: 13.5px; margin: 0; }
 .modal__fila dd { color: var(--color-profundo); font-weight: 800; font-size: 14px; margin: 0; }
+
+/* Variante de modal con formulario (confirmación de consulta, admin) */
+.modal--form { text-align: left; }
+.modal--form .modal__titulo,
+.modal--form .modal__texto { text-align: left; }
+.confirmar-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+@media (max-width: 460px) {
+  .confirmar-form { grid-template-columns: 1fr; }
+}
 
 /* --- Footer de tokens de diseño --- */
 .tokens {

@@ -32,6 +32,10 @@
     confirm: null,
   };
 
+  // Estado de la vista admin (efímero): consulta abierta en el modal de
+  // confirmación y, tras confirmar, el aviso de éxito.
+  const estadoAdmin = { confirmId: null, exito: null };
+
   /* ===================== Plantillas compartidas ===================== */
 
   function tplHeader() {
@@ -345,6 +349,13 @@
 
   function tplFila(row) {
     const meta = Consultas.META[row.status];
+    // Las pendientes ofrecen la acción de confirmar; el resto muestra el
+    // badge cíclico para avanzar el ciclo de atención.
+    const accion = row.status === 'pending'
+      ? `<button type="button" class="btn-confirmar" data-confirmar="${row.id}">Confirmar</button>`
+      : `<button type="button" class="badge badge--${meta.clase}" data-cycle="${row.id}" title="Cambiar estado">
+            <span class="badge__dot"></span>${meta.label}
+          </button>`;
     return `
       <div class="tabla__fila">
         <div><span class="tabla__cola">${row.queue}</span></div>
@@ -352,11 +363,7 @@
         <div class="tabla__cliente">${e(row.cliente)}</div>
         <div class="tabla__mascota"><span class="tabla__mascota-ico">🐾</span>${e(row.mascota)}</div>
         <div class="tabla__motivo">${e(row.motivo)}</div>
-        <div>
-          <button type="button" class="badge badge--${meta.clase}" data-cycle="${row.id}" title="Cambiar estado">
-            <span class="badge__dot"></span>${meta.label}
-          </button>
-        </div>
+        <div>${accion}</div>
       </div>`;
   }
 
@@ -388,6 +395,7 @@
           </div>
           <div class="contadores">
             <div class="contador"><span class="contador__dot contador__dot--pending"></span><span class="contador__num">${c.pending}</span><span class="contador__lbl">Pendientes</span></div>
+            <div class="contador"><span class="contador__dot contador__dot--confirmed"></span><span class="contador__num">${c.confirmed}</span><span class="contador__lbl">Confirmadas</span></div>
             <div class="contador"><span class="contador__dot contador__dot--progreso"></span><span class="contador__num">${c.in_progress}</span><span class="contador__lbl">En progreso</span></div>
             <div class="contador"><span class="contador__dot contador__dot--done"></span><span class="contador__num">${c.done}</span><span class="contador__lbl">Atendidas</span></div>
           </div>
@@ -402,15 +410,127 @@
             </div>
           </div>
         </div>
-        <p class="admin-ayuda">💡 Toca un estado para avanzarlo: Pendiente → En progreso → Atendida. El orden de cola refleja el ingreso (FIFO) por fecha y hora.</p>
+        <p class="admin-ayuda">💡 Confirma las consultas pendientes para asignar fecha y hora de atención y avisar al cliente. Una vez confirmadas, toca el estado para avanzar el ciclo: Confirmada → En progreso → Atendida. El orden de cola refleja el ingreso (FIFO) por fecha y hora.</p>
         ${tplTokens()}
       </div>`);
+    DOM.montar('#capa-modal', tplModalAdmin());
+  }
+
+  /* ----- Modal de confirmación (admin) ----- */
+
+  function tplModalAdmin() {
+    if (estadoAdmin.confirmId != null) return tplConfirmarForm();
+    if (estadoAdmin.exito) return tplConfirmarExito();
+    return '';
+  }
+
+  function tplConfirmarForm() {
+    const c = Consultas.listar().find((x) => x.id === estadoAdmin.confirmId);
+    if (!c) return '';
+    const opciones = Horarios.listarDias().map((d) =>
+      `<option value="${d.rank}"${d.rank === c.rank ? ' selected' : ''}>${e(d.label)} · ${e(d.date)}</option>`
+    ).join('');
+    const fila = (et, val) => `<div class="modal__fila"><dt>${et}</dt><dd>${e(val)}</dd></div>`;
+    return `
+      <div class="modal-overlay">
+        <div class="modal modal--form">
+          <div class="modal__blob"></div>
+          <div style="position:relative;">
+            <h3 class="modal__titulo">Confirmar consulta</h3>
+            <p class="modal__texto">Revisa los datos y asigna la fecha y hora de atención.</p>
+            <div class="modal__detalle">
+              ${fila('👤 Cliente', c.cliente)}
+              ${fila('📞 Contacto', c.contacto || '—')}
+              ${fila('🐾 Mascota', c.mascota)}
+              ${fila('🩺 Motivo', c.motivo)}
+            </div>
+            <div class="confirmar-form">
+              <div class="campo">
+                <label class="campo__label">Fecha de atención</label>
+                <select class="campo__control" data-confirmar-fecha>${opciones}</select>
+              </div>
+              <div class="campo">
+                <label class="campo__label">Hora de atención</label>
+                <input class="campo__control" type="time" value="${e(c.time)}" data-confirmar-hora>
+              </div>
+            </div>
+            <button type="button" class="btn-primario" style="margin-top:22px;" data-confirmar-ok="${c.id}">Confirmar cita</button>
+            <button type="button" class="btn-secundario" data-cerrar-modal>Cancelar</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function tplConfirmarExito() {
+    const c = estadoAdmin.exito;
+    const fila = (et, val) => `<div class="modal__fila"><dt>${et}</dt><dd>${e(val)}</dd></div>`;
+    return `
+      <div class="modal-overlay">
+        <div class="modal">
+          <div class="modal__blob"></div>
+          <div style="position:relative;">
+            <div class="modal__check">✓</div>
+            <h3 class="modal__titulo">¡Consulta confirmada!</h3>
+            <p class="modal__texto">Se notificó al cliente la fecha y hora de atención.</p>
+            <div class="modal__detalle">
+              ${fila('📅 Fecha', c.date)}
+              ${fila('🕑 Hora', c.time)}
+              ${fila('🐾 Mascota', c.mascota)}
+              ${fila('👤 Cliente', c.cliente)}
+            </div>
+            <button type="button" class="btn-primario btn-primario--plano" style="margin-top:22px;" data-cerrar-modal>Entendido, cerrar</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function abrirConfirmar(id) {
+    estadoAdmin.confirmId = id;
+    estadoAdmin.exito = null;
+    DOM.montar('#capa-modal', tplModalAdmin());
+  }
+
+  function confirmarConsulta(id) {
+    const sel = DOM.sel('[data-confirmar-fecha]');
+    const horaInput = DOM.sel('[data-confirmar-hora]');
+    const rank = sel ? Number(sel.value) : null;
+    const dia = Horarios.listarDias().find((d) => d.rank === rank);
+    const time = horaInput ? horaInput.value : '';
+
+    const actualizada = Consultas.confirmar(id, {
+      date: dia ? dia.date : undefined,
+      rank: dia ? dia.rank : undefined,
+      time: time || undefined,
+    });
+    if (actualizada) Notificaciones.crear(actualizada);
+
+    estadoAdmin.confirmId = null;
+    estadoAdmin.exito = actualizada;
+    renderAdmin();
+  }
+
+  function cerrarModalAdmin() {
+    estadoAdmin.confirmId = null;
+    estadoAdmin.exito = null;
+    DOM.montar('#capa-modal', '');
   }
 
   function wireAdmin() {
-    DOM.delegar(DOM.sel('main'), 'click', '[data-cycle]', (_ev, el) => {
+    const main = DOM.sel('main');
+    DOM.delegar(main, 'click', '[data-cycle]', (_ev, el) => {
       Consultas.avanzarEstado(Number(el.getAttribute('data-cycle')));
       renderAdmin();
+    });
+    DOM.delegar(main, 'click', '[data-confirmar]', (_ev, el) =>
+      abrirConfirmar(Number(el.getAttribute('data-confirmar'))));
+
+    const modal = DOM.sel('#capa-modal');
+    modal.addEventListener('click', (ev) => {
+      const ok = ev.target.closest('[data-confirmar-ok]');
+      if (ok) { confirmarConsulta(Number(ok.getAttribute('data-confirmar-ok'))); return; }
+      if (ev.target.closest('[data-cerrar-modal]')) { cerrarModalAdmin(); return; }
+      // Clic en el fondo (overlay) cierra; clic dentro del modal no.
+      if (ev.target.classList.contains('modal-overlay')) cerrarModalAdmin();
     });
   }
 
