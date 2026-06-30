@@ -73,6 +73,29 @@
       assert(Object.prototype.hasOwnProperty.call(c, 'confirmed'), 'debe existir contador confirmed');
     });
 
+    it('contadores() incluye la clave canceled', () => {
+      const c = Consultas.contadores();
+      assert(Object.prototype.hasOwnProperty.call(c, 'canceled'), 'debe existir contador canceled');
+    });
+
+    it('filtrar() busca por nombre de mascota sin distinguir mayúsculas', () => {
+      const resultados = Consultas.filtrar({ busqueda: 'luna' });
+      assert(resultados.length >= 1, 'debe encontrar al menos una consulta');
+      assert(resultados.every(c => c.mascota.toLowerCase().includes('luna')), 'debe coincidir por mascota');
+    });
+
+    it('filtrar() busca por dueño usando el campo cliente', () => {
+      const resultados = Consultas.filtrar({ busqueda: 'maria' });
+      assert(resultados.length >= 1, 'debe encontrar al menos un dueño');
+      assert(resultados.every(c => c.cliente.toLowerCase().startsWith('mar')), 'debe coincidir por dueño');
+    });
+
+    it('filtrar() limita resultados por estado', () => {
+      const resultados = Consultas.filtrar({ estado: 'pending' });
+      assert(resultados.length >= 1, 'debe encontrar consultas pendientes');
+      assert(resultados.every(c => c.status === 'pending'), 'todas deben estar pendientes');
+    });
+
     it('avanzarEstado() cicla pending → in_progress → done → pending', () => {
       const id = Consultas.listar()[0].id;
       const estadoDe = () => Consultas.listar().find(c => c.id === id).status;
@@ -99,9 +122,17 @@
       });
     });
 
+    it('agrupadasPorFecha() aplica filtros antes de agrupar', () => {
+      const grupos = Consultas.agrupadasPorFecha({ estado: 'in_progress' });
+      assert(grupos.length >= 1, 'debe haber grupos filtrados');
+      grupos.forEach(g => {
+        g.rows.forEach(r => assert(r.status === 'in_progress', 'solo deben quedar consultas en curso'));
+      });
+    });
+
     it('contadores() suma exactamente el total de consultas', () => {
       const c = Consultas.contadores();
-      const total = c.pending + c.confirmed + c.in_progress + c.done;
+      const total = c.pending + c.confirmed + c.in_progress + c.done + c.canceled;
       assert(total === Consultas.listar().length, 'los contadores deben cuadrar con el total');
     });
 
