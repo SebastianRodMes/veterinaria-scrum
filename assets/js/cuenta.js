@@ -40,8 +40,23 @@
             <div class="marca__sub">Gestión de citas veterinarias</div>
           </div>
         </a>
-        <a class="cuenta-volver" data-ir-inicio href="index.html">← Volver al inicio</a>
+        <div class="app-header__acciones">
+          ${tplTema()}
+          <a class="cuenta-volver" data-ir-inicio href="index.html">← Volver al inicio</a>
+        </div>
       </div>`;
+  }
+
+  /** Botón conmutador de tema claro / oscuro. */
+  function tplTema() {
+    const oscuro = Tema.esOscuro();
+    return `
+      <button type="button" class="tema-toggle" data-tema-toggle
+              aria-pressed="${oscuro}"
+              title="${oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}"
+              aria-label="${oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}">
+        ${oscuro ? '☀️' : '🌙'}
+      </button>`;
   }
 
   function tplCampo(zona, campo, etiqueta, attrs) {
@@ -209,6 +224,10 @@
     DOM.delegar(header, 'click', '[data-ir-inicio]', (ev) => {
       ev.preventDefault();
       Router.irACliente();
+    });
+    DOM.delegar(header, 'click', '[data-tema-toggle]', () => {
+      Tema.alternar();
+      DOM.montar('header', tplHeader());
     });
 
     main.addEventListener('input', (ev) => {
