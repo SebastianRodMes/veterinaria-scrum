@@ -137,6 +137,86 @@
   border-radius: 12px;
 }
 
+/* --- Sesión del cliente (header) --- */
+.cuenta-sesion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cuenta-sesion__nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--color-profundo);
+}
+.cuenta-sesion__rol {
+  display: inline-flex;
+  align-items: center;
+  background: #e9f7fc;
+  color: var(--color-primario);
+  font-weight: 800;
+  font-size: 11.5px;
+  letter-spacing: .3px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.cuenta-sesion__salir,
+.cuenta-sesion__entrar {
+  border: none;
+  cursor: pointer;
+  font-family: var(--fuente-texto);
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: all .15s;
+}
+.cuenta-sesion__salir {
+  background: #e4eff4;
+  color: #5d8090;
+}
+.cuenta-sesion__salir:hover { background: #d6e7ee; color: var(--color-profundo); }
+.cuenta-sesion__entrar {
+  background: var(--grad-primario);
+  color: #fff;
+  box-shadow: 0 8px 18px -10px rgba(0, 119, 182, .7);
+}
+.cuenta-sesion__entrar:hover { transform: translateY(-1px); }
+
+/* --- Aviso "inicia sesión" en el formulario de reserva --- */
+.alerta-login {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #fff8e8;
+  border: 1px solid #ffe2a8;
+  color: #9a6700;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+.cuenta-enlace {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--fuente-texto);
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--color-primario);
+  padding: 0;
+  text-decoration: underline;
+}
+.cuenta-enlace:hover { color: var(--color-profundo); }
+
 /* --- Badge de estado --- */
 .badge {
   display: inline-flex;

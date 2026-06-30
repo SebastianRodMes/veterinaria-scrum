@@ -60,10 +60,11 @@ const Consultas = (() => {
 
   /**
    * Crea una consulta pendiente.
-   * `datos`: { cliente, contacto, mascota, motivo, day, slot }
+   * `datos`: { cliente, contacto, mascota, motivo, day, slot, usuarioId }
+   * `usuarioId` (opcional) asocia la cita a la cuenta del cliente.
    * Devuelve la consulta creada.
    */
-  function reservar({ cliente, contacto, mascota, motivo, day, slot }) {
+  function reservar({ cliente, contacto, mascota, motivo, day, slot, usuarioId }) {
     const consultas = listar();
     const nueva = {
       id: Date.now(),
@@ -76,6 +77,7 @@ const Consultas = (() => {
       mascota: (mascota || '').trim(),
       motivo,
       status: 'pending',
+      usuarioId: usuarioId != null ? usuarioId : null,
     };
     consultas.push(nueva);
     persistir(consultas);
