@@ -143,6 +143,36 @@
       assert(total === Consultas.listar().length, 'los contadores (con cancelado) deben cuadrar');
     });
 
+    /* ----- Tests de listarPorUsuario ----- */
+
+    it('listarPorUsuario() filtra las consultas del usuario indicado', () => {
+      const uid = 90001;
+      const c1 = Consultas.reservar({
+        cliente: 'User A', contacto: 'a@correo.com', mascota: 'Luna',
+        motivo: 'Control', day: { date: 'Lun 16 Jun', rank: 1 }, slot: { time: '09:00' },
+        usuarioId: uid,
+      });
+      const c2 = Consultas.reservar({
+        cliente: 'User B', contacto: 'b@correo.com', mascota: 'Rex',
+        motivo: 'Vacunación', day: { date: 'Mar 17 Jun', rank: 2 }, slot: { time: '10:00' },
+        usuarioId: 90002,
+      });
+      const del = Consultas.listarPorUsuario(uid);
+      assert(del.length >= 1, 'debe devolver al menos una consulta del usuario');
+      assert(del.every(c => c.usuarioId === uid), 'todas las consultas deben pertenecer al usuario');
+      assert(!del.find(c => c.id === c2.id), 'no debe incluir consultas de otro usuario');
+    });
+
+    it('listarPorUsuario() devuelve vacío si el usuario no tiene consultas', () => {
+      const del = Consultas.listarPorUsuario(99999);
+      assert(del.length === 0, 'no debe haber consultas de un usuario inexistente');
+    });
+
+    it('listarPorUsuario(null) devuelve vacío', () => {
+      const del = Consultas.listarPorUsuario(null);
+      assert(del.length === 0, 'null no debe devolver consultas');
+    });
+
     // Limpieza final.
     Storage.eliminar('consultas');
     Storage.eliminar('consultas-sembradas');
