@@ -81,5 +81,12 @@ const Horarios = (() => {
     }
   }
 
-  return { listarDias, buscarSlot, ocupar };
+  /** Libera una franja previamente ocupada (al cancelar una consulta). */
+  function desocupar(slotId) {
+    if (!slotId) return;
+    const reservados = ocupados().filter((id) => id !== slotId);
+    Storage.guardar(CLAVE_OCUPADOS, reservados);
+  }
+
+  return { listarDias, buscarSlot, ocupar, desocupar };
 })();

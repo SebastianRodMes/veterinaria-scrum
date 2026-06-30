@@ -6,10 +6,11 @@
  *   - El admin confirma una consulta pendiente (confirmar), fijando la
  *     fecha/hora de atención y notificando al cliente.
  *   - Una vez confirmada, el ciclo de atención avanza con avanzarEstado.
+ *   - El cliente puede cancelar una consulta pendiente (cancelar).
  * Se persiste vía Storage; sembrado inicial la primera vez.
  *
- * Interfaz pública: META, reservar, listar, confirmar, avanzarEstado,
- *                   agrupadasPorFecha, contadores.
+ * Interfaz pública: META, reservar, listar, confirmar, cancelar,
+ *                   avanzarEstado, agrupadasPorFecha, contadores.
  */
 const Consultas = (() => {
   const CLAVE = 'consultas';
@@ -21,6 +22,7 @@ const Consultas = (() => {
     confirmed:   { label: 'Confirmada',  clase: 'confirmed' },
     in_progress: { label: 'En progreso', clase: 'in_progress' },
     done:        { label: 'Atendida',    clase: 'done' },
+    cancelado:   { label: 'Cancelada',   clase: 'cancelado' },
   };
 
   // Ciclo de atención posterior a la confirmación (el badge del panel admin
@@ -68,6 +70,7 @@ const Consultas = (() => {
       date: day.date,
       rank: day.rank,
       time: slot.time,
+      slotId: slot.id || null,
       cliente: (cliente || '').trim(),
       contacto: (contacto || '').trim(),
       mascota: (mascota || '').trim(),
@@ -128,12 +131,27 @@ const Consultas = (() => {
     });
   }
 
-  /** Conteo por estado: { pending, confirmed, in_progress, done }. */
+  /** Conteo por estado: { pending, confirmed, in_progress, done, cancelado }. */
   function contadores() {
-    const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0 };
+    const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0, cancelado: 0 };
     listar().forEach((c) => { acc[c.status]++; });
     return acc;
   }
 
-  return { META, reservar, listar, confirmar, avanzarEstado, agrupadasPorFecha, contadores };
+  /**
+   * Cancela una consulta pendiente: la pasa a estado 'cancelado'.
+   * Solo se permite si la consulta existe y está en estado 'pending'.
+   * Devuelve la consulta actualizada o null si el id no existe o no
+   * cumple la condición.
+   */
+  function cancelar(id) {
+    const consultas = listar();
+    const consulta = consultas.find((c) => c.id === id);
+    if (!consulta || consulta.status !== 'pending') return null;
+    consulta.status = 'cancelado';
+    persistir(consultas);
+    return consulta;
+  }
+
+  return { META, reservar, listar, confirmar, cancelar, avanzarEstado, agrupadasPorFecha, contadores };
 })();
