@@ -26,6 +26,13 @@
   flex-wrap: wrap;
 }
 
+.app-header__acciones {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
 .marca { display: flex; align-items: center; gap: 12px; }
 .marca__texto { line-height: 1; }
 .marca__nombre {

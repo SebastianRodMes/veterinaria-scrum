@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Spec — Autenticación</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; color: #1d3b46; }
+    li { margin: 4px 0; }
+    .ok::before   { content: '✔ '; color: #16a34a; }
+    .fail::before { content: '✘ '; color: #e0457b; }
+    .fail { color: #e0457b; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Spec del módulo de autenticación</h1>
+  <ul id="resultados"></ul>
+  <script src="../assets/js/lib/storage.js"></script>
+  <script src="../assets/js/modules/auth.js"></script>
+  <script>
+    const salida = document.getElementById('resultados');
+    function it(nombre, fn) {
+      const li = document.createElement('li');
+      try { fn(); li.className = 'ok'; li.textContent = nombre; }
+      catch (err) { li.className = 'fail'; li.textContent = nombre + ' — ' + err.message; }
+      salida.appendChild(li);
+    }
+    function assert(cond, msg) { if (!cond) throw new Error(msg || 'aserción fallida'); }
+
+    // Estado limpio: sin usuarios ni sesión.
+    Storage.eliminar('usuarios');
+    Storage.eliminar('sesion');
+
+    it('sesionActiva() y usuarioActual() arrancan sin sesión', () => {
+      assert(Auth.sesionActiva() === false, 'no debe haber sesión al inicio');
+      assert(Auth.usuarioActual() === null, 'usuarioActual debe ser null sin sesión');
+    });
+
+    it('registrar() crea el usuario, normaliza el correo y recorta el nombre', () => {
+      const res = Auth.registrar({ nombre: '  María López  ', email: 'Maria@Mail.COM', password: 'secreta1' });
+      assert(res.ok === true, 'el registro debe ser exitoso');
+      assert(res.usuario.nombre === 'María López', 'el nombre debe quedar sin espacios sobrantes');
+      assert(res.usuario.email === 'maria@mail.com', 'el correo debe guardarse en minúsculas');
+    });
+
+    it('registrar() rechaza correos duplicados sin distinguir mayúsculas', () => {
+      const res = Auth.registrar({ nombre: 'Otra', email: 'MARIA@mail.com', password: 'otra123' });
+      assert(res.ok === false, 'no debe permitir un correo ya registrado');
+      assert(typeof res.error === 'string' && res.error.length > 0, 'debe devolver un mensaje de error');
+    });
+
+    it('iniciarSesion() falla con contraseña incorrecta', () => {
+      const res = Auth.iniciarSesion('maria@mail.com', 'incorrecta');
+      assert(res.ok === false, 'no debe iniciar sesión con contraseña incorrecta');
+      assert(Auth.sesionActiva() === false, 'no debe quedar sesión activa tras fallar');
+    });
+
+    it('iniciarSesion() falla con un correo inexistente', () => {
+      const res = Auth.iniciarSesion('nadie@mail.com', 'loquesea');
+      assert(res.ok === false, 'no debe iniciar sesión con un correo no registrado');
+    });
+
+    it('iniciarSesion() correcto guarda la sesión y la asocia al usuario', () => {
+      const res = Auth.iniciarSesion('Maria@Mail.com', 'secreta1');
+      assert(res.ok === true, 'debe iniciar sesión con credenciales válidas');
+      assert(Auth.sesionActiva() === true, 'debe quedar una sesión activa');
+      const u = Auth.usuarioActual();
+      assert(u && u.email === 'maria@mail.com', 'usuarioActual debe devolver el usuario logueado');
+    });
+
+    it('cerrarSesion() elimina la sesión activa', () => {
+      Auth.cerrarSesion();
+      assert(Auth.sesionActiva() === false, 'no debe haber sesión tras cerrarla');
+      assert(Auth.usuarioActual() === null, 'usuarioActual debe ser null tras cerrar sesión');
+    });
+
+    it('registrar() asigna el rol "cliente" por defecto', () => {
+      // María se registró sin rol explícito en una prueba anterior.
+      const maria = Storage.leer('usuarios', []).find((u) => u.email === 'maria@mail.com');
+      assert(maria && maria.rol === 'cliente', 'sin rol explícito la cuenta debe ser cliente');
+    });
+
+    it('registrar() persiste el rol "admin"', () => {
+      const res = Auth.registrar({ nombre: 'Dr. House', email: 'house@vet.com', password: 'clave12', rol: 'admin' });
+      assert(res.ok === true, 'debe registrar al administrador');
+      assert(res.usuario.rol === 'admin', 'debe guardar el rol admin');
+    });
+
+    it('rolUsuario() refleja el rol del usuario logueado y cae a "cliente" sin sesión', () => {
+      Auth.iniciarSesion('house@vet.com', 'clave12');
+      assert(Auth.rolUsuario() === 'admin', 'debe devolver admin para el administrador logueado');
+      Auth.cerrarSesion();
+      assert(Auth.rolUsuario() === 'cliente', 'sin sesión debe caer a cliente');
+    });
+
+    // Limpieza final.
+    Storage.eliminar('usuarios');
+    Storage.eliminar('sesion');
+  </script>
+</body>
+</html>
