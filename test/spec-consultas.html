@@ -101,8 +101,46 @@
 
     it('contadores() suma exactamente el total de consultas', () => {
       const c = Consultas.contadores();
-      const total = c.pending + c.confirmed + c.in_progress + c.done;
+      const total = c.pending + c.confirmed + c.in_progress + c.done + (c.cancelado || 0);
       assert(total === Consultas.listar().length, 'los contadores deben cuadrar con el total');
+    });
+
+    /* ----- Tests de cancelación (US #4) ----- */
+
+    it('cancelar() cambia el estado a cancelado si la consulta está pendiente', () => {
+      const c = Consultas.reservar({
+        cliente: 'Cancel User', contacto: 'cancel@correo.com', mascota: 'Rex',
+        motivo: 'Control', day: { date: 'Mar 17 Jun', rank: 2 }, slot: { time: '16:00', id: 'd2-16' },
+      });
+      assert(c.status === 'pending', 'la nueva consulta debe nacer pendiente');
+      const cancelada = Consultas.cancelar(c.id);
+      assert(cancelada !== null, 'cancelar debe devolver la consulta');
+      assert(cancelada.status === 'cancelado', 'el estado debe ser cancelado');
+      const guardada = Consultas.listar().find(x => x.id === c.id);
+      assert(guardada.status === 'cancelado', 'el cambio debe persistir');
+    });
+
+    it('cancelar() retorna null si la consulta no está pendiente', () => {
+      const c = Consultas.reservar({
+        cliente: 'No Cancel', contacto: 'no@correo.com', mascota: 'Milo',
+        motivo: 'Vacunación', day: { date: 'Lun 16 Jun', rank: 1 }, slot: { time: '12:00' },
+      });
+      Consultas.confirmar(c.id);
+      const resultado = Consultas.cancelar(c.id);
+      assert(resultado === null, 'no debe cancelar una consulta ya confirmada');
+      assert(Consultas.listar().find(x => x.id === c.id).status === 'confirmed', 'el estado debe seguir confirmed');
+    });
+
+    it('cancelar() retorna null si el id no existe', () => {
+      const resultado = Consultas.cancelar(999999999);
+      assert(resultado === null, 'no debe cancelar un id inexistente');
+    });
+
+    it('contadores() incluye la clave cancelado y cuadra con el total', () => {
+      const c = Consultas.contadores();
+      assert(Object.prototype.hasOwnProperty.call(c, 'cancelado'), 'debe existir contador cancelado');
+      const total = c.pending + c.confirmed + c.in_progress + c.done + c.cancelado;
+      assert(total === Consultas.listar().length, 'los contadores (con cancelado) deben cuadrar');
     });
 
     // Limpieza final.

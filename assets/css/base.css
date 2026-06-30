@@ -16,6 +16,7 @@
   --estado-confirmada: #0077b6;
   --estado-progreso:   #00b4d8;
   --estado-done:       #16a34a;
+  --estado-cancelado:  #ef4444;
 
   /* --- Texto --- */
   --texto-fuerte: #03045e;

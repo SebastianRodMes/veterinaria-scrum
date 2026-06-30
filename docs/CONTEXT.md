@@ -2,7 +2,7 @@
 
 | Término | Definición |
 |---------|-----------|
-| **consulta** | Cita agendada por un cliente para atender a su mascota. Tiene estados: pendiente, confirmada, en curso, completada. |
+| **consulta** | Cita agendada por un cliente para atender a su mascota. Tiene estados: pendiente, confirmada, en curso, completada, cancelada. |
 | **mascota** | Animal registrado por un cliente. Datos: nombre, especie, raza, edad, dueño. |
 | **cliente** | Usuario que registra mascotas y reserva consultas. |
 | **administrador** | Usuario que gestiona consultas (confirmar, rechazar, ver estados) y notifica a clientes. |
