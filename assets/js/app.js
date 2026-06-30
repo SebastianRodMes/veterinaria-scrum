@@ -17,6 +17,7 @@
     { var: '--estado-pendiente', hex: '#f0a500' },
     { var: '--estado-progreso',  hex: '#00b4d8' },
     { var: '--estado-done',      hex: '#16a34a' },
+    { var: '--estado-cancelado', hex: '#ef4444' },
   ];
 
   const MOTIVOS = ['Consulta general', 'Vacunación', 'Control', 'Emergencia', 'Estética', 'Cirugía'];
@@ -29,7 +30,9 @@
     form: { cliente: '', contacto: '', mascota: '', motivo: '' },
     errors: {},
     modalOpen: false,
-    confirm: null,
+    modalData: null,
+    // Sub-estado del módulo de seguimiento / cancelación.
+    tracking: { aviso: null },
     requiereLogin: false, // aviso de "inicia sesión" al intentar agendar sin sesión
   };
 
@@ -276,18 +279,48 @@
   }
 
   function tplModal() {
-    if (!estado.modalOpen || !estado.confirm) return '';
-    const c = estado.confirm;
+    if (!estado.modalOpen || !estado.modalData) return '';
+    const m = estado.modalData;
+
+    if (m.tipo === 'confirmar_cancelacion') {
+      return `
+        <div class="modal-overlay" data-cerrar-modal>
+          <div class="modal" data-stop>
+            <div class="modal__blob" style="background: linear-gradient(135deg, #fbbf24, #d97706);"></div>
+            <div style="position:relative;">
+              <div class="modal__check" style="color: #fbbf24;">⚠️</div>
+              <h3 class="modal__titulo">¿Cancelar cita?</h3>
+              <p class="modal__texto">¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer.</p>
+              <div style="display: flex; gap: 10px; margin-top: 22px;">
+                <button type="button" class="btn-secundario" style="flex: 1;" data-cerrar-modal>No, mantener</button>
+                <button type="button" class="btn-primario btn-primario--plano" style="flex: 1; background: #ef4444;" data-ejecutar-cancelar="${m.idConsulta}">Sí, cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    const c = m.cita;
+    const isCancel = m.tipo === 'cancelacion';
+
+    const titulo = isCancel ? '¡Cita cancelada!' : '¡Cita confirmada!';
+    const texto = isCancel
+      ? 'La cita fue cancelada exitosamente y el horario liberado.'
+      : 'Tu reserva quedó registrada correctamente.';
+    const checkIco = isCancel ? '✕' : '✓';
+    const colorStyle = isCancel ? 'background: linear-gradient(135deg, #ef4444, #dc2626);' : '';
+    const colorTxt = isCancel ? 'color: #ef4444;' : '';
+
     const fila = (et, val) => `
       <div class="modal__fila"><dt>${et}</dt><dd>${e(val)}</dd></div>`;
     return `
       <div class="modal-overlay" data-cerrar-modal>
         <div class="modal" data-stop>
-          <div class="modal__blob"></div>
+          <div class="modal__blob" style="${colorStyle}"></div>
           <div style="position:relative;">
-            <div class="modal__check">✓</div>
-            <h3 class="modal__titulo">¡Cita confirmada!</h3>
-            <p class="modal__texto">Tu reserva quedó registrada correctamente.</p>
+            <div class="modal__check" style="${colorTxt}">${checkIco}</div>
+            <h3 class="modal__titulo">${titulo}</h3>
+            <p class="modal__texto">${texto}</p>
             <div class="modal__detalle">
               ${fila('📅 Fecha', c.date)}
               ${fila('🕑 Hora', c.time)}
@@ -300,6 +333,92 @@
       </div>`;
   }
 
+  /* ----- Módulo de seguimiento / cancelación ----- */
+
+  function tplSeguimiento() {
+    const usuario = Auth.usuarioActual();
+
+    // Sin sesión activa: invitar a iniciar sesión.
+    if (!usuario) {
+      return `
+        <section class="card seguimiento">
+          <h2 class="card__titulo">Mis citas</h2>
+          <p class="card__sub">Inicia sesión para ver y gestionar tus citas agendadas</p>
+          <div class="seguimiento__vacio">
+            <span>🔒</span>
+            <p>Para ver tus citas necesitas una cuenta.</p>
+            <button type="button" class="seguimiento__login-enlace" data-ir-cuenta>Iniciar sesión</button>
+          </div>
+        </section>`;
+    }
+
+    const citas = Consultas.listarPorUsuario(usuario.id);
+
+    // Con sesión pero sin citas.
+    if (!citas.length) {
+      const avisoHtml = estado.tracking.aviso
+        ? `<div class="seguimiento__aviso seguimiento__aviso--${estado.tracking.aviso.tipo === 'ok' ? 'ok' : 'error'}">${e(estado.tracking.aviso.mensaje)}</div>`
+        : '';
+      return `
+        <section class="card seguimiento">
+          <h2 class="card__titulo">Mis citas</h2>
+          <p class="card__sub">Aquí aparecerán las citas que agendes con tu cuenta</p>
+          ${avisoHtml}
+          <div class="seguimiento__vacio">
+            <span>📅</span>
+            <p>No tienes citas registradas aún. Selecciona un horario arriba para agendar tu primera cita.</p>
+          </div>
+        </section>`;
+    }
+
+    // Con sesión y con citas: listar todas.
+    const item = (ico, rotulo, valor) => `
+      <div class="seguimiento__item">
+        <div class="seguimiento__item-ico">${ico}</div>
+        <div>
+          <div class="seguimiento__item-rotulo">${rotulo}</div>
+          <div class="seguimiento__item-valor">${e(valor)}</div>
+        </div>
+      </div>`;
+
+    const tarjetas = citas.map((c) => {
+      const meta = Consultas.META[c.status] || { label: c.status, clase: c.status };
+      const puedeCancel = c.status === 'pending';
+      const acciones = puedeCancel
+        ? `<div class="seguimiento__acciones">
+             <button type="button" class="btn-cancelar" data-cancelar="${c.id}">Cancelar cita</button>
+           </div>`
+        : '';
+      return `
+        <div class="seguimiento__cita">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span class="badge badge--${meta.clase}"><span class="badge__dot"></span>${meta.label}</span>
+          </div>
+          <div class="seguimiento__detalle">
+            ${item('🐾', 'Mascota', c.mascota)}
+            ${item('📅', 'Fecha', c.date)}
+            ${item('🕑', 'Hora', c.time)}
+            ${item('🩺', 'Motivo', c.motivo)}
+          </div>
+          ${acciones}
+        </div>`;
+    }).join('');
+
+    const avisoHtml = estado.tracking.aviso
+      ? `<div class="seguimiento__aviso seguimiento__aviso--${estado.tracking.aviso.tipo === 'ok' ? 'ok' : 'error'}">${e(estado.tracking.aviso.mensaje)}</div>`
+      : '';
+
+    return `
+      <section class="card seguimiento">
+        <h2 class="card__titulo">Mis citas</h2>
+        <p class="card__sub">Gestiona las citas agendadas con tu cuenta</p>
+        ${avisoHtml}
+        <div class="seguimiento__lista">
+          ${tarjetas}
+        </div>
+      </section>`;
+  }
+
   function renderCliente() {
     DOM.montar('main', `
       <div class="contenedor app-main">
@@ -309,6 +428,7 @@
           ${tplFormulario()}
           ${tplResumen()}
         </section>
+        ${tplSeguimiento()}
         ${tplTokens()}
       </div>`);
     DOM.montar('#capa-modal', tplModal());
@@ -362,7 +482,7 @@
     Horarios.ocupar(sel.slot.id);
     const aviso = Notificaciones.crear(consulta);
 
-    estado.confirm = aviso;
+    estado.modalData = { tipo: 'reserva', cita: aviso };
     estado.modalOpen = true;
     estado.form = datosPrecargados();
     estado.selectedSlotId = null;
@@ -387,8 +507,33 @@
 
   function cerrarModal() {
     estado.modalOpen = false;
-    estado.confirm = null;
+    estado.modalData = null;
     DOM.montar('#capa-modal', '');
+  }
+
+  function cancelarConsultaCliente(id) {
+    estado.modalData = { tipo: 'confirmar_cancelacion', idConsulta: id };
+    estado.modalOpen = true;
+    renderCliente();
+  }
+
+  function ejecutarCancelacion(id) {
+    const cancelada = Consultas.cancelar(id);
+    if (!cancelada) {
+      estado.tracking.aviso = { tipo: 'error', mensaje: 'Solo se pueden cancelar consultas en estado pendiente.' };
+      renderCliente();
+      return;
+    }
+
+    // Liberar el slot del horario si está registrado.
+    if (cancelada.slotId) {
+      Horarios.desocupar(cancelada.slotId);
+    }
+
+    estado.tracking.aviso = null;
+    estado.modalData = { tipo: 'cancelacion', cita: cancelada };
+    estado.modalOpen = true;
+    renderCliente();
   }
 
   function wireCliente() {
@@ -405,9 +550,15 @@
     });
     DOM.delegar(main, 'click', '[data-slot]', (_ev, el) => seleccionarSlot(el.getAttribute('data-slot')));
     DOM.delegar(main, 'click', '[data-submit]', () => confirmarCita());
+    DOM.delegar(main, 'click', '[data-cancelar]', (_ev, el) => cancelarConsultaCliente(Number(el.getAttribute('data-cancelar'))));
     DOM.delegar(main, 'click', '[data-ir-cuenta]', () => Router.irACuenta());
 
     modal.addEventListener('click', (ev) => {
+      const btnCancelar = ev.target.closest('[data-ejecutar-cancelar]');
+      if (btnCancelar) {
+        ejecutarCancelacion(Number(btnCancelar.getAttribute('data-ejecutar-cancelar')));
+        return;
+      }
       if (ev.target.closest('[data-cerrar-modal]')) { cerrarModal(); return; }
       if (ev.target.closest('[data-stop]')) ev.stopPropagation();
     });
@@ -417,13 +568,18 @@
 
   function tplFila(row) {
     const meta = Consultas.META[row.status];
-    // Las pendientes ofrecen la acción de confirmar; el resto muestra el
-    // badge cíclico para avanzar el ciclo de atención.
-    const accion = row.status === 'pending'
-      ? `<button type="button" class="btn-confirmar" data-confirmar="${row.id}">Confirmar</button>`
-      : `<button type="button" class="badge badge--${meta.clase}" data-cycle="${row.id}" title="Cambiar estado">
+    // Las pendientes ofrecen la acción de confirmar; las canceladas muestran
+    // solo el badge sin acción; el resto muestra el badge cíclico.
+    let accion;
+    if (row.status === 'pending') {
+      accion = `<button type="button" class="btn-confirmar" data-confirmar="${row.id}">Confirmar</button>`;
+    } else if (row.status === 'cancelado') {
+      accion = `<span class="badge badge--${meta.clase}"><span class="badge__dot"></span>${meta.label}</span>`;
+    } else {
+      accion = `<button type="button" class="badge badge--${meta.clase}" data-cycle="${row.id}" title="Cambiar estado">
             <span class="badge__dot"></span>${meta.label}
           </button>`;
+    }
     return `
       <div class="tabla__fila">
         <div><span class="tabla__cola">${row.queue}</span></div>
@@ -466,6 +622,7 @@
             <div class="contador"><span class="contador__dot contador__dot--confirmed"></span><span class="contador__num">${c.confirmed}</span><span class="contador__lbl">Confirmadas</span></div>
             <div class="contador"><span class="contador__dot contador__dot--progreso"></span><span class="contador__num">${c.in_progress}</span><span class="contador__lbl">En progreso</span></div>
             <div class="contador"><span class="contador__dot contador__dot--done"></span><span class="contador__num">${c.done}</span><span class="contador__lbl">Atendidas</span></div>
+            <div class="contador"><span class="contador__dot contador__dot--cancelado"></span><span class="contador__num">${c.cancelado}</span><span class="contador__lbl">Canceladas</span></div>
           </div>
         </div>
         <div class="tabla-wrap">
