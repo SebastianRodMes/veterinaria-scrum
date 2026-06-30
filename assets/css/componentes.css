@@ -253,10 +253,12 @@
 .badge--confirmed   { background: #dceaf7; color: #035388; }
 .badge--in_progress { background: #d6f2fa; color: #006b84; }
 .badge--done        { background: #dcfce7; color: #15803d; }
+.badge--cancelado   { background: #fee2e2; color: #991b1b; }
 .badge--pending     .badge__dot { background: var(--estado-pendiente); }
 .badge--confirmed   .badge__dot { background: var(--estado-confirmada); }
 .badge--in_progress .badge__dot { background: var(--estado-progreso); }
 .badge--done        .badge__dot { background: var(--estado-done); }
+.badge--cancelado   .badge__dot { background: var(--estado-cancelado); }
 
 /* --- Botón "Confirmar" (tabla admin) --- */
 .btn-confirmar {
