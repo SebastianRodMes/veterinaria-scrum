@@ -33,6 +33,7 @@
     confirm: null,
     // Sub-estado del módulo de seguimiento / cancelación.
     tracking: { consultaId: '', resultado: null, aviso: null },
+    requiereLogin: false, // aviso de "inicia sesión" al intentar agendar sin sesión
   };
 
   // Estado de la vista admin (efímero): consulta abierta en el modal de
@@ -42,8 +43,6 @@
   /* ===================== Plantillas compartidas ===================== */
 
   function tplHeader() {
-    const rol = Auth.rolActual();
-    const act = (r) => 'tab' + (rol === r ? ' tab--activo' : '');
     return `
       <div class="contenedor app-header__inner">
         <div class="marca">
@@ -58,11 +57,38 @@
             <div class="marca__sub">Gestión de citas veterinarias</div>
           </div>
         </div>
-        <div class="tabs">
-          <button type="button" class="${act('cliente')}" data-ir="cliente">Cliente</button>
-          <button type="button" class="${act('admin')}" data-ir="admin">Admin</button>
+        <div class="app-header__acciones">
+          ${tplCuenta()}
         </div>
       </div>`;
+  }
+
+  /**
+   * Bloque de sesión en el header.
+   * - En la página admin la sesión está garantizada (el guard de init redirige
+   *   si no hay un administrador logueado): muestra identidad + rol + salir.
+   * - En la página cliente: identidad + salir si hay sesión; si no, "Iniciar sesión".
+   */
+  function tplCuenta() {
+    const u = Auth.usuarioActual();
+    if (Auth.esAdmin()) {
+      if (!u) return '';
+      return `
+        <div class="cuenta-sesion">
+          <span class="cuenta-sesion__nombre" title="${e(u.email)}">👤 ${e(u.nombre || u.email)}</span>
+          <span class="cuenta-sesion__rol">Administrador</span>
+          <button type="button" class="cuenta-sesion__salir" data-cerrar-sesion>Cerrar sesión</button>
+        </div>`;
+    }
+    if (!Auth.esCliente()) return '';
+    if (u) {
+      return `
+        <div class="cuenta-sesion">
+          <span class="cuenta-sesion__nombre" title="${e(u.email)}">👤 ${e(u.nombre || u.email)}</span>
+          <button type="button" class="cuenta-sesion__salir" data-cerrar-sesion>Cerrar sesión</button>
+        </div>`;
+    }
+    return `<button type="button" class="cuenta-sesion__entrar" data-ir-cuenta>Iniciar sesión</button>`;
   }
 
   function tplTokens() {
@@ -141,6 +167,11 @@
     const errSlot = estado.errors.slot
       ? `<div class="alerta-slot" data-error-de="slot">⚠ ${e(estado.errors.slot)}</div>` : '';
 
+    const avisoLogin = estado.requiereLogin
+      ? `<div class="alerta-login">🔒 Debes iniciar sesión para agendar tu cita.
+           <button type="button" class="cuenta-enlace" data-ir-cuenta>Iniciar sesión</button>
+         </div>` : '';
+
     return `
       <div class="card">
         <h2 class="card__titulo">Datos de la cita</h2>
@@ -169,6 +200,7 @@
             </div>
           </div>
           ${errSlot}
+          ${avisoLogin}
           <button type="button" class="btn-primario" data-submit>Confirmar cita</button>
         </div>
       </div>`;
@@ -356,6 +388,12 @@
   }
 
   function confirmarCita() {
+    // Sin sesión activa no se agenda: se solicita iniciar sesión primero.
+    if (!Auth.sesionActiva()) {
+      estado.requiereLogin = true;
+      renderCliente();
+      return;
+    }
     const errors = Validacion.validarCita(estado.form, estado.selectedSlotId);
     if (Object.keys(errors).length) {
       estado.errors = errors;
@@ -364,21 +402,37 @@
     }
     const sel = Horarios.buscarSlot(estado.selectedSlotId);
     const f = estado.form;
+    const usuario = Auth.usuarioActual();
 
-    Mascotas.registrar({ nombre: f.mascota, motivo: f.motivo });
+    Mascotas.registrar({ nombre: f.mascota, motivo: f.motivo, usuarioId: usuario.id });
     const consulta = Consultas.reservar({
       cliente: f.cliente, contacto: f.contacto, mascota: f.mascota,
-      motivo: f.motivo, day: sel.day, slot: sel.slot,
+      motivo: f.motivo, day: sel.day, slot: sel.slot, usuarioId: usuario.id,
     });
     Horarios.ocupar(sel.slot.id);
     const aviso = Notificaciones.crear(consulta);
 
     estado.confirm = aviso;
     estado.modalOpen = true;
-    estado.form = { cliente: '', contacto: '', mascota: '', motivo: '' };
+    estado.form = datosPrecargados();
     estado.selectedSlotId = null;
     estado.errors = {};
+    estado.requiereLogin = false;
     renderCliente();
+  }
+
+  /**
+   * Formulario base: precarga nombre y contacto del cliente con sesión
+   * activa; deja mascota y motivo en blanco para la nueva cita.
+   */
+  function datosPrecargados() {
+    const u = Auth.usuarioActual();
+    return {
+      cliente: u ? (u.nombre || '') : '',
+      contacto: u ? (u.email || '') : '',
+      mascota: '',
+      motivo: '',
+    };
   }
 
   function cerrarModal() {
@@ -451,6 +505,7 @@
     DOM.delegar(main, 'click', '[data-submit]', () => confirmarCita());
     DOM.delegar(main, 'click', '[data-tracking-buscar]', () => buscarConsulta());
     DOM.delegar(main, 'click', '[data-cancelar]', (_ev, el) => cancelarConsultaCliente(Number(el.getAttribute('data-cancelar'))));
+    DOM.delegar(main, 'click', '[data-ir-cuenta]', () => Router.irACuenta());
 
     modal.addEventListener('click', (ev) => {
       if (ev.target.closest('[data-cerrar-modal]')) { cerrarModal(); return; }
@@ -656,6 +711,12 @@
   /* ===================== Arranque ===================== */
 
   function init() {
+    // Control de acceso: el panel admin exige una sesión de administrador.
+    if (Auth.esAdmin() && (!Auth.sesionActiva() || Auth.rolUsuario() !== 'admin')) {
+      Router.irACuenta();
+      return;
+    }
+
     DOM.montar('header', tplHeader());
     DOM.sel('header').classList.add('app-header');
 
@@ -666,18 +727,25 @@
       document.body.appendChild(capa);
     }
 
-    // Conmutador de rol en el header.
-    DOM.delegar(DOM.sel('header'), 'click', '[data-ir]', (_ev, el) => {
-      el.getAttribute('data-ir') === 'admin' ? Router.irAAdmin() : Router.irACliente();
-    });
+    // Acciones de cuenta en el header.
+    const header = DOM.sel('header');
+    DOM.delegar(header, 'click', '[data-ir-cuenta]', () => Router.irACuenta());
+    DOM.delegar(header, 'click', '[data-cerrar-sesion]', () => cerrarSesion());
 
     if (Auth.esAdmin()) {
       renderAdmin();
       wireAdmin();
     } else {
+      estado.form = datosPrecargados();
       renderCliente();
       wireCliente();
     }
+  }
+
+  /** Cierra la sesión y recarga la vista cliente sin datos precargados. */
+  function cerrarSesion() {
+    Auth.cerrarSesion();
+    location.reload();
   }
 
   document.addEventListener('DOMContentLoaded', init);
