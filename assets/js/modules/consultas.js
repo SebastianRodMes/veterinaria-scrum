@@ -9,8 +9,8 @@
  *   - El cliente puede cancelar una consulta pendiente (cancelar).
  * Se persiste vía Storage; sembrado inicial la primera vez.
  *
- * Interfaz pública: META, reservar, listar, confirmar, cancelar,
- *                   avanzarEstado, agrupadasPorFecha, contadores.
+ * Interfaz pública: META, reservar, listar, listarPorUsuario, confirmar,
+ *                   cancelar, avanzarEstado, agrupadasPorFecha, contadores.
  */
 const Consultas = (() => {
   const CLAVE = 'consultas';
@@ -133,6 +133,12 @@ const Consultas = (() => {
     });
   }
 
+  /** Devuelve las consultas asociadas a un usuario (por su id de cuenta). */
+  function listarPorUsuario(usuarioId) {
+    if (usuarioId == null) return [];
+    return listar().filter((c) => c.usuarioId === usuarioId);
+  }
+
   /** Conteo por estado: { pending, confirmed, in_progress, done, cancelado }. */
   function contadores() {
     const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0, cancelado: 0 };
@@ -155,5 +161,5 @@ const Consultas = (() => {
     return consulta;
   }
 
-  return { META, reservar, listar, confirmar, cancelar, avanzarEstado, agrupadasPorFecha, contadores };
+  return { META, reservar, listar, listarPorUsuario, confirmar, cancelar, avanzarEstado, agrupadasPorFecha, contadores };
 })();
