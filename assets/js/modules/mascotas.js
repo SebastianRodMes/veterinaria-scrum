@@ -13,11 +13,15 @@ const Mascotas = (() => {
     return Storage.leer(CLAVE, []);
   }
 
-  /** Registra una mascota ({ nombre, motivo }) y devuelve el registro. */
-  function registrar({ nombre, motivo }) {
+  /**
+   * Registra una mascota ({ nombre, motivo, usuarioId }) y devuelve el
+   * registro. `usuarioId` (opcional) asocia la mascota a la cuenta del dueño.
+   */
+  function registrar({ nombre, motivo, usuarioId }) {
     const registro = {
       nombre: (nombre || '').trim(),
       motivo: motivo || '',
+      usuarioId: usuarioId != null ? usuarioId : null,
     };
     const todas = listar();
     todas.push(registro);

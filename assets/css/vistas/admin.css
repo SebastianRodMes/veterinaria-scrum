@@ -29,7 +29,7 @@
 .contador__dot--confirmed { background: var(--estado-confirmada); }
 .contador__dot--progreso { background: var(--estado-progreso); }
 .contador__dot--done { background: var(--estado-done); }
-.contador__dot--canceled { background: var(--estado-cancelada); }
+.contador__dot--cancelado { background: var(--estado-cancelado); }
 .contador__num { font-weight: 800; color: var(--color-profundo); font-size: 18px; font-family: var(--fuente-titulo); }
 .contador__lbl { font-weight: 700; color: var(--texto-tenue); font-size: 13px; }
 

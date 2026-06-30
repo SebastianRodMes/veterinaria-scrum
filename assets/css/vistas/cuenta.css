@@ -1,0 +1,83 @@
+/* ============================================================
+   vistas/cuenta.css — Registro e inicio de sesión del cliente
+   ============================================================ */
+
+/* Marca como enlace en el header */
+.marca--enlace { text-decoration: none; }
+.cuenta-volver {
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--color-primario);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cuenta-volver:hover { color: var(--color-profundo); }
+
+/* Layout centrado de la tarjeta de acceso */
+.cuenta-main {
+  padding: 48px 22px 64px;
+  display: flex;
+  justify-content: center;
+}
+.cuenta-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 30px 30px 26px;
+}
+.cuenta-card__cabecera { text-align: center; margin-bottom: 20px; }
+.cuenta-card__cabecera .pill { margin-bottom: 14px; }
+.cuenta-card__titulo { font-size: 26px; margin: 0 0 6px; }
+.cuenta-card__sub {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Pestañas Iniciar sesión / Crear cuenta */
+.cuenta-tabs { margin-bottom: 22px; }
+.cuenta-tabs .tab { flex: 1; text-align: center; }
+
+/* Formulario */
+.cuenta-form { display: flex; flex-direction: column; gap: 16px; }
+.cuenta-form .btn-primario { margin-top: 4px; }
+
+/* Aviso global (credenciales incorrectas, cuenta creada, etc.) */
+.cuenta-aviso {
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-weight: 700;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.cuenta-aviso--error {
+  background: #fff5f7;
+  border: 1px solid #ffd5e2;
+  color: var(--texto-error);
+}
+.cuenta-aviso--ok {
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+/* Pie con enlace para alternar de modo */
+.cuenta-pie {
+  text-align: center;
+  margin: 18px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+.cuenta-enlace {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--fuente-texto);
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--color-primario);
+  padding: 0;
+}
+.cuenta-enlace:hover { color: var(--color-profundo); text-decoration: underline; }

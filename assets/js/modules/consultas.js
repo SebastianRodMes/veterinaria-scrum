@@ -2,14 +2,17 @@
  * Módulo de consultas — CRUD, estados y transiciones.
  *
  * Una consulta es la cita agendada por un cliente para su mascota.
- * Estados: pending → confirmed → in_progress → done.
+ * Estados: pending → confirmed → in_progress → done; una consulta pendiente
+ * también puede quedar cancelada por el cliente.
  *   - El admin confirma una consulta pendiente (confirmar), fijando la
  *     fecha/hora de atención y notificando al cliente.
  *   - Una vez confirmada, el ciclo de atención avanza con avanzarEstado.
+ *   - El cliente puede cancelar una consulta pendiente (cancelar).
  * Se persiste vía Storage; sembrado inicial la primera vez.
  *
- * Interfaz pública: META, reservar, listar, confirmar, avanzarEstado,
- *                   filtrar, agrupadasPorFecha, contadores.
+ * Interfaz pública: META, reservar, listar, listarPorUsuario, confirmar,
+ *                   cancelar, avanzarEstado, filtrar, agrupadasPorFecha,
+ *                   contadores.
  */
 const Consultas = (() => {
   const CLAVE = 'consultas';
@@ -19,19 +22,19 @@ const Consultas = (() => {
   const META = {
     pending:     { label: 'Pendiente',   clase: 'pending' },
     confirmed:   { label: 'Confirmada',  clase: 'confirmed' },
-    in_progress: { label: 'En curso',    clase: 'in_progress' },
-    done:        { label: 'Completada',  clase: 'done' },
-    canceled:    { label: 'Cancelada',   clase: 'canceled' },
+    in_progress: { label: 'En progreso', clase: 'in_progress' },
+    done:        { label: 'Atendida',    clase: 'done' },
+    cancelado:   { label: 'Cancelada',   clase: 'cancelado' },
   };
 
-  // Ciclo de atención posterior a la confirmación (el badge del panel admin
-  // lo avanza). 'confirmed' entra en el ciclo apuntando a 'in_progress'.
+  // Ciclo de atención posterior a la confirmación. El panel admin no hace
+  // avanzar canceladas; se deja estable para evitar estados indefinidos.
   const SIGUIENTE_ESTADO = {
     pending: 'in_progress',
     confirmed: 'in_progress',
     in_progress: 'done',
     done: 'pending',
-    canceled: 'pending',
+    cancelado: 'cancelado',
   };
 
   const SEMILLA = [
@@ -49,9 +52,23 @@ const Consultas = (() => {
     }
   }
 
+  function persistir(consultas) {
+    Storage.guardar(CLAVE, consultas);
+  }
+
+  function normalizarConsulta(consulta) {
+    return consulta.status === 'canceled'
+      ? { ...consulta, status: 'cancelado' }
+      : consulta;
+  }
+
   function listar() {
     asegurarSembrado();
-    return Storage.leer(CLAVE, []);
+    const consultas = Storage.leer(CLAVE, []);
+    const normalizadas = consultas.map(normalizarConsulta);
+    const cambio = normalizadas.some((consulta, i) => consulta !== consultas[i]);
+    if (cambio) persistir(normalizadas);
+    return normalizadas;
   }
 
   function normalizarTexto(texto) {
@@ -70,7 +87,7 @@ const Consultas = (() => {
     const termino = normalizarTexto(busqueda);
     if (!termino) return true;
 
-    // El "dueno" de la mascota se guarda en la consulta como cliente.
+    // El dueño de la mascota se guarda en la consulta como cliente.
     const camposBuscables = [
       consulta.mascota,
       consulta.cliente,
@@ -85,27 +102,26 @@ const Consultas = (() => {
     );
   }
 
-  function persistir(consultas) {
-    Storage.guardar(CLAVE, consultas);
-  }
-
   /**
    * Crea una consulta pendiente.
-   * `datos`: { cliente, contacto, mascota, motivo, day, slot }
+   * `datos`: { cliente, contacto, mascota, motivo, day, slot, usuarioId }
+   * `usuarioId` (opcional) asocia la cita a la cuenta del cliente.
    * Devuelve la consulta creada.
    */
-  function reservar({ cliente, contacto, mascota, motivo, day, slot }) {
+  function reservar({ cliente, contacto, mascota, motivo, day, slot, usuarioId }) {
     const consultas = listar();
     const nueva = {
       id: Date.now(),
       date: day.date,
       rank: day.rank,
       time: slot.time,
+      slotId: slot.id || null,
       cliente: (cliente || '').trim(),
       contacto: (contacto || '').trim(),
       mascota: (mascota || '').trim(),
       motivo,
       status: 'pending',
+      usuarioId: usuarioId != null ? usuarioId : null,
     };
     consultas.push(nueva);
     persistir(consultas);
@@ -138,7 +154,7 @@ const Consultas = (() => {
   /** Avanza el estado de una consulta de forma cíclica. */
   function avanzarEstado(id) {
     const consultas = listar().map((c) =>
-      c.id === id ? { ...c, status: SIGUIENTE_ESTADO[c.status] } : c
+      c.id === id ? { ...c, status: SIGUIENTE_ESTADO[c.status] || c.status } : c
     );
     persistir(consultas);
     return consultas;
@@ -161,14 +177,46 @@ const Consultas = (() => {
     });
   }
 
-  /** Conteo por estado: { pending, confirmed, in_progress, done, canceled }. */
+  /** Devuelve las consultas asociadas a un usuario (por su id de cuenta). */
+  function listarPorUsuario(usuarioId) {
+    if (usuarioId == null) return [];
+    return listar().filter((c) => c.usuarioId === usuarioId);
+  }
+
+  /** Conteo por estado: { pending, confirmed, in_progress, done, cancelado }. */
   function contadores() {
-    const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0, canceled: 0 };
+    const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0, cancelado: 0 };
     listar().forEach((c) => {
       if (Object.prototype.hasOwnProperty.call(acc, c.status)) acc[c.status]++;
     });
     return acc;
   }
 
-  return { META, reservar, listar, confirmar, avanzarEstado, filtrar, agrupadasPorFecha, contadores };
+  /**
+   * Cancela una consulta pendiente: la pasa a estado 'cancelado'.
+   * Solo se permite si la consulta existe y está en estado 'pending'.
+   * Devuelve la consulta actualizada o null si el id no existe o no
+   * cumple la condición.
+   */
+  function cancelar(id) {
+    const consultas = listar();
+    const consulta = consultas.find((c) => c.id === id);
+    if (!consulta || consulta.status !== 'pending') return null;
+    consulta.status = 'cancelado';
+    persistir(consultas);
+    return consulta;
+  }
+
+  return {
+    META,
+    reservar,
+    listar,
+    listarPorUsuario,
+    confirmar,
+    cancelar,
+    avanzarEstado,
+    filtrar,
+    agrupadasPorFecha,
+    contadores,
+  };
 })();
