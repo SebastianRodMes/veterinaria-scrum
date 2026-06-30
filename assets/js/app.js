@@ -22,6 +22,14 @@
 
   const MOTIVOS = ['Consulta general', 'Vacunación', 'Control', 'Emergencia', 'Estética', 'Cirugía'];
 
+  const FILTROS_CONSULTAS = [
+    { estado: 'all', label: 'Todas' },
+    { estado: 'pending', label: 'Pendientes' },
+    { estado: 'in_progress', label: 'En Curso' },
+    { estado: 'done', label: 'Completadas' },
+    { estado: 'cancelado', label: 'Canceladas' },
+  ];
+
   const e = DOM.escapar;
 
   // Estado de la vista cliente (efímero, salvo lo que se persiste al reservar).
@@ -38,7 +46,7 @@
 
   // Estado de la vista admin (efímero): consulta abierta en el modal de
   // confirmación y, tras confirmar, el aviso de éxito.
-  const estadoAdmin = { confirmId: null, exito: null };
+  const estadoAdmin = { confirmId: null, exito: null, filtroEstado: 'all', busqueda: '' };
 
   /* ===================== Plantillas compartidas ===================== */
 
@@ -603,12 +611,42 @@
       </div>`;
   }
 
+  function tplFiltrosConsultas(totalFiltrado) {
+    const botones = FILTROS_CONSULTAS.map((filtro) => {
+      const activo = estadoAdmin.filtroEstado === filtro.estado;
+      return `
+        <button type="button" class="filtro-estado${activo ? ' filtro-estado--activo' : ''}"
+          data-filtro-consultas="${filtro.estado}" aria-pressed="${activo}">
+          ${e(filtro.label)}
+        </button>`;
+    }).join('');
+
+    return `
+      <section class="admin-filtros" aria-label="Filtros de consultas">
+        <div class="admin-busqueda">
+          <label class="campo__label" for="buscar-consultas">Buscar consulta</label>
+          <input class="campo__control admin-busqueda__input" id="buscar-consultas"
+            data-buscar-consultas value="${e(estadoAdmin.busqueda)}"
+            placeholder="Mascota o due&ntilde;o" autocomplete="off">
+        </div>
+        <div class="admin-filtros__acciones" role="group" aria-label="Filtrar por estado">
+          ${botones}
+        </div>
+        <div class="admin-filtros__total">${totalFiltrado} visibles</div>
+      </section>`;
+  }
+
   function renderAdmin() {
     const c = Consultas.contadores();
-    const grupos = Consultas.agrupadasPorFecha();
+    const filtros = {
+      estado: estadoAdmin.filtroEstado,
+      busqueda: estadoAdmin.busqueda,
+    };
+    const grupos = Consultas.agrupadasPorFecha(filtros);
+    const totalFiltrado = grupos.reduce((total, grupo) => total + grupo.count, 0);
     const cuerpo = grupos.length
       ? grupos.map(tplGrupo).join('')
-      : '<div class="admin-vacio">No hay citas registradas todavía.</div>';
+      : '<div class="admin-vacio">No hay consultas que coincidan con el filtro.</div>';
 
     DOM.montar('main', `
       <div class="contenedor app-main">
@@ -625,6 +663,7 @@
             <div class="contador"><span class="contador__dot contador__dot--cancelado"></span><span class="contador__num">${c.cancelado}</span><span class="contador__lbl">Canceladas</span></div>
           </div>
         </div>
+        ${tplFiltrosConsultas(totalFiltrado)}
         <div class="tabla-wrap">
           <div class="tabla-scroll">
             <div class="tabla">
@@ -740,12 +779,33 @@
     DOM.montar('#capa-modal', '');
   }
 
+  function buscarConsultas(valor) {
+    estadoAdmin.busqueda = valor;
+    renderAdmin();
+    const buscador = DOM.sel('[data-buscar-consultas]');
+    if (buscador) {
+      buscador.focus();
+      buscador.setSelectionRange(buscador.value.length, buscador.value.length);
+    }
+  }
+
+  function filtrarConsultas(estado) {
+    estadoAdmin.filtroEstado = estado;
+    renderAdmin();
+  }
+
   function wireAdmin() {
     const main = DOM.sel('main');
+    main.addEventListener('input', (ev) => {
+      const buscador = ev.target.closest('[data-buscar-consultas]');
+      if (buscador) buscarConsultas(buscador.value);
+    });
     DOM.delegar(main, 'click', '[data-cycle]', (_ev, el) => {
       Consultas.avanzarEstado(Number(el.getAttribute('data-cycle')));
       renderAdmin();
     });
+    DOM.delegar(main, 'click', '[data-filtro-consultas]', (_ev, el) =>
+      filtrarConsultas(el.getAttribute('data-filtro-consultas')));
     DOM.delegar(main, 'click', '[data-confirmar]', (_ev, el) =>
       abrirConfirmar(Number(el.getAttribute('data-confirmar'))));
 

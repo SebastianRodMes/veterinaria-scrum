@@ -2,7 +2,8 @@
  * Módulo de consultas — CRUD, estados y transiciones.
  *
  * Una consulta es la cita agendada por un cliente para su mascota.
- * Estados: pending → confirmed → in_progress → done.
+ * Estados: pending → confirmed → in_progress → done; una consulta pendiente
+ * también puede quedar cancelada por el cliente.
  *   - El admin confirma una consulta pendiente (confirmar), fijando la
  *     fecha/hora de atención y notificando al cliente.
  *   - Una vez confirmada, el ciclo de atención avanza con avanzarEstado.
@@ -10,7 +11,8 @@
  * Se persiste vía Storage; sembrado inicial la primera vez.
  *
  * Interfaz pública: META, reservar, listar, listarPorUsuario, confirmar,
- *                   cancelar, avanzarEstado, agrupadasPorFecha, contadores.
+ *                   cancelar, avanzarEstado, filtrar, agrupadasPorFecha,
+ *                   contadores.
  */
 const Consultas = (() => {
   const CLAVE = 'consultas';
@@ -25,13 +27,14 @@ const Consultas = (() => {
     cancelado:   { label: 'Cancelada',   clase: 'cancelado' },
   };
 
-  // Ciclo de atención posterior a la confirmación (el badge del panel admin
-  // lo avanza). 'confirmed' entra en el ciclo apuntando a 'in_progress'.
+  // Ciclo de atención posterior a la confirmación. El panel admin no hace
+  // avanzar canceladas; se deja estable para evitar estados indefinidos.
   const SIGUIENTE_ESTADO = {
     pending: 'in_progress',
     confirmed: 'in_progress',
     in_progress: 'done',
     done: 'pending',
+    cancelado: 'cancelado',
   };
 
   const SEMILLA = [
@@ -49,13 +52,54 @@ const Consultas = (() => {
     }
   }
 
-  function listar() {
-    asegurarSembrado();
-    return Storage.leer(CLAVE, []);
-  }
-
   function persistir(consultas) {
     Storage.guardar(CLAVE, consultas);
+  }
+
+  function normalizarConsulta(consulta) {
+    return consulta.status === 'canceled'
+      ? { ...consulta, status: 'cancelado' }
+      : consulta;
+  }
+
+  function listar() {
+    asegurarSembrado();
+    const consultas = Storage.leer(CLAVE, []);
+    const normalizadas = consultas.map(normalizarConsulta);
+    const cambio = normalizadas.some((consulta, i) => consulta !== consultas[i]);
+    if (cambio) persistir(normalizadas);
+    return normalizadas;
+  }
+
+  function normalizarTexto(texto) {
+    return String(texto || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function coincideEstado(consulta, estado) {
+    return !estado || estado === 'all' || consulta.status === estado;
+  }
+
+  function coincideBusqueda(consulta, busqueda) {
+    const termino = normalizarTexto(busqueda);
+    if (!termino) return true;
+
+    // El dueño de la mascota se guarda en la consulta como cliente.
+    const camposBuscables = [
+      consulta.mascota,
+      consulta.cliente,
+    ].map(normalizarTexto);
+
+    return camposBuscables.some((valor) => valor.includes(termino));
+  }
+
+  function filtrar({ estado = 'all', busqueda = '' } = {}) {
+    return listar().filter((consulta) =>
+      coincideEstado(consulta, estado) && coincideBusqueda(consulta, busqueda)
+    );
   }
 
   /**
@@ -110,7 +154,7 @@ const Consultas = (() => {
   /** Avanza el estado de una consulta de forma cíclica. */
   function avanzarEstado(id) {
     const consultas = listar().map((c) =>
-      c.id === id ? { ...c, status: SIGUIENTE_ESTADO[c.status] } : c
+      c.id === id ? { ...c, status: SIGUIENTE_ESTADO[c.status] || c.status } : c
     );
     persistir(consultas);
     return consultas;
@@ -121,8 +165,8 @@ const Consultas = (() => {
    * ordena por hora ascendente formando la cola FIFO numerada.
    * Devuelve [{ date, count, rows: [{ ...consulta, queue }] }].
    */
-  function agrupadasPorFecha() {
-    const consultas = listar();
+  function agrupadasPorFecha(filtros = {}) {
+    const consultas = filtrar(filtros);
     const ranks = [...new Set(consultas.map((c) => c.rank))].sort((a, b) => a - b);
     return ranks.map((rk) => {
       const rows = consultas
@@ -142,7 +186,9 @@ const Consultas = (() => {
   /** Conteo por estado: { pending, confirmed, in_progress, done, cancelado }. */
   function contadores() {
     const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0, cancelado: 0 };
-    listar().forEach((c) => { acc[c.status]++; });
+    listar().forEach((c) => {
+      if (Object.prototype.hasOwnProperty.call(acc, c.status)) acc[c.status]++;
+    });
     return acc;
   }
 
@@ -161,5 +207,16 @@ const Consultas = (() => {
     return consulta;
   }
 
-  return { META, reservar, listar, listarPorUsuario, confirmar, cancelar, avanzarEstado, agrupadasPorFecha, contadores };
+  return {
+    META,
+    reservar,
+    listar,
+    listarPorUsuario,
+    confirmar,
+    cancelar,
+    avanzarEstado,
+    filtrar,
+    agrupadasPorFecha,
+    contadores,
+  };
 })();
