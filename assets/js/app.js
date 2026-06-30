@@ -55,9 +55,22 @@
           </div>
         </div>
         <div class="app-header__acciones">
+          ${tplTema()}
           ${tplCuenta()}
         </div>
       </div>`;
+  }
+
+  /** Botón conmutador de tema claro / oscuro. */
+  function tplTema() {
+    const oscuro = Tema.esOscuro();
+    return `
+      <button type="button" class="tema-toggle" data-tema-toggle
+              aria-pressed="${oscuro}"
+              title="${oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}"
+              aria-label="${oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}">
+        ${oscuro ? '☀️' : '🌙'}
+      </button>`;
   }
 
   /**
@@ -612,6 +625,7 @@
     const header = DOM.sel('header');
     DOM.delegar(header, 'click', '[data-ir-cuenta]', () => Router.irACuenta());
     DOM.delegar(header, 'click', '[data-cerrar-sesion]', () => cerrarSesion());
+    DOM.delegar(header, 'click', '[data-tema-toggle]', () => alternarTema());
 
     if (Auth.esAdmin()) {
       renderAdmin();
@@ -627,6 +641,12 @@
   function cerrarSesion() {
     Auth.cerrarSesion();
     location.reload();
+  }
+
+  /** Alterna el tema y refresca el header (el icono del botón cambia). */
+  function alternarTema() {
+    Tema.alternar();
+    DOM.montar('header', tplHeader());
   }
 
   document.addEventListener('DOMContentLoaded', init);

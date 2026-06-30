@@ -1,0 +1,166 @@
+/* ============================================================
+   tema-oscuro.css — Tema oscuro opcional ("modo noche")
+   Se activa cuando <html data-tema="oscuro"> (ver lib/tema.js).
+   Carga después de las demás hojas para poder anular sus valores.
+
+   Estrategia:
+   1. Redefinir las variables de diseño (la mayoría de la UI las usa y se
+      adapta sola).
+   2. Anular puntualmente los componentes con colores fijos que no derivan
+      de variables.
+   ============================================================ */
+
+/* ---------- 1. Variables de diseño ---------- */
+html[data-tema="oscuro"] {
+  /* Acentos (se mantienen vivos sobre fondo oscuro) */
+  --color-profundo: #dceefb;   /* ahora actúa como texto/realce claro */
+  --color-primario: #38bdf8;
+  --color-acento:   #22d3ee;
+  --color-frost:    #1e4a5f;
+  --color-cyan:     #16323f;
+
+  /* Estados */
+  --estado-pendiente:  #f0a500;
+  --estado-confirmada: #38bdf8;
+  --estado-progreso:   #22d3ee;
+  --estado-done:       #34d399;
+
+  /* Texto */
+  --texto-fuerte: #eaf6fb;
+  --texto-base:   #cfe1ea;
+  --texto-suave:  #a7c2d0;
+  --texto-tenue:  #8da9b8;
+  --texto-mudo:   #7f9aa9;
+  --texto-error:  #f7789f;
+
+  /* Superficies y bordes */
+  --fondo-app:        #0a1722;
+  --superficie:       #11212e;
+  --superficie-suave: #0e1c27;
+  --borde:            #1e3543;
+  --borde-suave:      #25404f;
+
+  /* Degradados y sombras */
+  --grad-fondo: radial-gradient(1200px 600px at 100% -10%, #0e2a38 0%, rgba(14,42,56,0) 55%),
+                radial-gradient(900px 500px at -10% 110%, #0c2630 0%, rgba(12,38,48,0) 50%),
+                var(--fondo-app);
+  --sombra-card:     0 14px 36px -30px rgba(0, 0, 0, .75);
+  --sombra-flotante: 0 18px 40px -28px rgba(0, 0, 0, .65);
+}
+
+html[data-tema="oscuro"] ::placeholder { color: var(--texto-mudo); }
+
+/* ---------- 2. Componentes con colores fijos ---------- */
+
+/* Header */
+[data-tema="oscuro"] .app-header { background: rgba(13, 26, 36, .82); }
+[data-tema="oscuro"] .marca__sub { color: var(--texto-suave); }
+
+/* Conmutador de pestañas */
+[data-tema="oscuro"] .tabs { background: #16313f; }
+[data-tema="oscuro"] .tab { color: var(--texto-suave); }
+[data-tema="oscuro"] .tab--activo {
+  background: var(--superficie);
+  color: var(--texto-fuerte);
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .55);
+}
+
+/* Pill / chips informativos */
+[data-tema="oscuro"] .pill,
+[data-tema="oscuro"] .cuenta-sesion__rol {
+  background: rgba(56, 189, 248, .14);
+  color: var(--color-acento);
+}
+
+/* Inputs */
+[data-tema="oscuro"] .campo__label { color: var(--texto-suave); }
+[data-tema="oscuro"] .campo__control { border: 1.5px solid var(--borde); }
+[data-tema="oscuro"] .campo__control--error {
+  border-color: #f2a8c4;
+  background: rgba(247, 120, 159, .1);
+}
+
+/* Sesión en el header */
+[data-tema="oscuro"] .cuenta-sesion__salir {
+  background: var(--superficie-suave);
+  color: var(--texto-suave);
+}
+[data-tema="oscuro"] .cuenta-sesion__salir:hover {
+  background: var(--borde);
+  color: var(--texto-fuerte);
+}
+
+/* Avisos */
+[data-tema="oscuro"] .alerta-login {
+  background: rgba(240, 165, 0, .12);
+  border-color: rgba(240, 165, 0, .4);
+  color: #f3c969;
+}
+[data-tema="oscuro"] .alerta-slot {
+  background: rgba(247, 120, 159, .1);
+  border-color: rgba(247, 120, 159, .3);
+}
+
+/* Modal */
+[data-tema="oscuro"] .modal { background: var(--superficie); }
+[data-tema="oscuro"] .modal__blob { background: rgba(56, 189, 248, .08); }
+[data-tema="oscuro"] .modal__detalle {
+  background: var(--superficie-suave);
+  border-color: var(--borde);
+}
+
+/* Footer de tokens de diseño */
+[data-tema="oscuro"] .token__nombre { color: var(--texto-suave); }
+
+/* Botón conmutador de tema */
+[data-tema="oscuro"] .tema-toggle { background: var(--superficie-suave); }
+[data-tema="oscuro"] .tema-toggle:hover { background: var(--borde); }
+
+/* ---------- Vista cliente ---------- */
+[data-tema="oscuro"] .hero {
+  background: linear-gradient(120deg, var(--superficie) 0%, var(--superficie-suave) 100%);
+  border-color: var(--borde);
+}
+[data-tema="oscuro"] .hero__stat-lbl { color: var(--texto-tenue); }
+[data-tema="oscuro"] .hero__sep { background: var(--borde); }
+
+[data-tema="oscuro"] .leyenda { color: var(--texto-suave); }
+[data-tema="oscuro"] .leyenda .libre { background: var(--superficie); border-color: var(--color-primario); }
+[data-tema="oscuro"] .leyenda .ocupado { background: var(--borde); }
+
+[data-tema="oscuro"] .dia { border-color: var(--borde); }
+[data-tema="oscuro"] .slot--libre {
+  background: var(--superficie);
+  border-color: var(--borde);
+  color: var(--color-acento);
+}
+[data-tema="oscuro"] .slot--ocupado {
+  background: var(--superficie-suave);
+  border-color: var(--superficie-suave);
+  color: var(--texto-mudo);
+}
+/* El resumen ya es un degradado azul profundo: encaja en ambos temas. */
+
+/* ---------- Vista admin ---------- */
+[data-tema="oscuro"] .contador { background: var(--superficie); border-color: var(--borde); }
+[data-tema="oscuro"] .tabla-wrap { background: var(--superficie); }
+[data-tema="oscuro"] .tabla__grupo-linea { background: linear-gradient(90deg, var(--borde), transparent); }
+[data-tema="oscuro"] .tabla__grupo-count { color: var(--texto-mudo); }
+[data-tema="oscuro"] .tabla__fila { border-top-color: var(--borde); }
+[data-tema="oscuro"] .tabla__cola { background: var(--superficie-suave); color: var(--color-acento); }
+[data-tema="oscuro"] .tabla__cliente { color: var(--texto-base); }
+[data-tema="oscuro"] .tabla__mascota { color: var(--texto-suave); }
+[data-tema="oscuro"] .tabla__mascota-ico { background: var(--superficie-suave); }
+[data-tema="oscuro"] .tabla__motivo { color: var(--texto-suave); }
+[data-tema="oscuro"] .admin-ayuda { color: var(--texto-tenue); }
+
+/* ---------- Vista cuenta ---------- */
+[data-tema="oscuro"] .cuenta-aviso--error {
+  background: rgba(247, 120, 159, .1);
+  border-color: rgba(247, 120, 159, .3);
+}
+[data-tema="oscuro"] .cuenta-aviso--ok {
+  background: rgba(52, 211, 153, .12);
+  border-color: rgba(52, 211, 153, .4);
+  color: #6ee7b7;
+}
