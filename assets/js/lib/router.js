@@ -5,7 +5,7 @@
  * (index.html y admin.html). El rol activo se deriva de la página actual,
  * declarado en `<body data-rol="...">`.
  *
- * Interfaz pública: rolActual, irACliente, irAAdmin.
+ * Interfaz pública: rolActual, irACliente, irAAdmin, irACuenta.
  */
 const Router = (() => {
   function rolActual() {
@@ -20,5 +20,10 @@ const Router = (() => {
     if (rolActual() !== 'admin') location.href = 'admin.html';
   }
 
-  return { rolActual, irACliente, irAAdmin };
+  /** Navega a la página de registro / inicio de sesión del cliente. */
+  function irACuenta() {
+    location.href = 'cuenta.html';
+  }
+
+  return { rolActual, irACliente, irAAdmin, irACuenta };
 })();

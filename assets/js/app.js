@@ -17,7 +17,7 @@
     { var: '--estado-pendiente', hex: '#f0a500' },
     { var: '--estado-progreso',  hex: '#00b4d8' },
     { var: '--estado-done',      hex: '#16a34a' },
-    { var: '--estado-cancelada', hex: '#e0457b' },
+    { var: '--estado-cancelado', hex: '#ef4444' },
   ];
 
   const MOTIVOS = ['Consulta general', 'Vacunación', 'Control', 'Emergencia', 'Estética', 'Cirugía'];
@@ -27,7 +27,7 @@
     { estado: 'pending', label: 'Pendientes' },
     { estado: 'in_progress', label: 'En Curso' },
     { estado: 'done', label: 'Completadas' },
-    { estado: 'canceled', label: 'Canceladas' },
+    { estado: 'cancelado', label: 'Canceladas' },
   ];
 
   const e = DOM.escapar;
@@ -38,7 +38,10 @@
     form: { cliente: '', contacto: '', mascota: '', motivo: '' },
     errors: {},
     modalOpen: false,
-    confirm: null,
+    modalData: null,
+    // Sub-estado del módulo de seguimiento / cancelación.
+    tracking: { aviso: null },
+    requiereLogin: false, // aviso de "inicia sesión" al intentar agendar sin sesión
   };
 
   // Estado de la vista admin (efímero): consulta abierta en el modal de
@@ -48,8 +51,6 @@
   /* ===================== Plantillas compartidas ===================== */
 
   function tplHeader() {
-    const rol = Auth.rolActual();
-    const act = (r) => 'tab' + (rol === r ? ' tab--activo' : '');
     return `
       <div class="contenedor app-header__inner">
         <div class="marca">
@@ -64,11 +65,51 @@
             <div class="marca__sub">Gestión de citas veterinarias</div>
           </div>
         </div>
-        <div class="tabs">
-          <button type="button" class="${act('cliente')}" data-ir="cliente">Cliente</button>
-          <button type="button" class="${act('admin')}" data-ir="admin">Admin</button>
+        <div class="app-header__acciones">
+          ${tplTema()}
+          ${tplCuenta()}
         </div>
       </div>`;
+  }
+
+  /** Botón conmutador de tema claro / oscuro. */
+  function tplTema() {
+    const oscuro = Tema.esOscuro();
+    return `
+      <button type="button" class="tema-toggle" data-tema-toggle
+              aria-pressed="${oscuro}"
+              title="${oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}"
+              aria-label="${oscuro ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}">
+        ${oscuro ? '☀️' : '🌙'}
+      </button>`;
+  }
+
+  /**
+   * Bloque de sesión en el header.
+   * - En la página admin la sesión está garantizada (el guard de init redirige
+   *   si no hay un administrador logueado): muestra identidad + rol + salir.
+   * - En la página cliente: identidad + salir si hay sesión; si no, "Iniciar sesión".
+   */
+  function tplCuenta() {
+    const u = Auth.usuarioActual();
+    if (Auth.esAdmin()) {
+      if (!u) return '';
+      return `
+        <div class="cuenta-sesion">
+          <span class="cuenta-sesion__nombre" title="${e(u.email)}">👤 ${e(u.nombre || u.email)}</span>
+          <span class="cuenta-sesion__rol">Administrador</span>
+          <button type="button" class="cuenta-sesion__salir" data-cerrar-sesion>Cerrar sesión</button>
+        </div>`;
+    }
+    if (!Auth.esCliente()) return '';
+    if (u) {
+      return `
+        <div class="cuenta-sesion">
+          <span class="cuenta-sesion__nombre" title="${e(u.email)}">👤 ${e(u.nombre || u.email)}</span>
+          <button type="button" class="cuenta-sesion__salir" data-cerrar-sesion>Cerrar sesión</button>
+        </div>`;
+    }
+    return `<button type="button" class="cuenta-sesion__entrar" data-ir-cuenta>Iniciar sesión</button>`;
   }
 
   function tplTokens() {
@@ -147,6 +188,11 @@
     const errSlot = estado.errors.slot
       ? `<div class="alerta-slot" data-error-de="slot">⚠ ${e(estado.errors.slot)}</div>` : '';
 
+    const avisoLogin = estado.requiereLogin
+      ? `<div class="alerta-login">🔒 Debes iniciar sesión para agendar tu cita.
+           <button type="button" class="cuenta-enlace" data-ir-cuenta>Iniciar sesión</button>
+         </div>` : '';
+
     return `
       <div class="card">
         <h2 class="card__titulo">Datos de la cita</h2>
@@ -175,6 +221,7 @@
             </div>
           </div>
           ${errSlot}
+          ${avisoLogin}
           <button type="button" class="btn-primario" data-submit>Confirmar cita</button>
         </div>
       </div>`;
@@ -240,18 +287,48 @@
   }
 
   function tplModal() {
-    if (!estado.modalOpen || !estado.confirm) return '';
-    const c = estado.confirm;
+    if (!estado.modalOpen || !estado.modalData) return '';
+    const m = estado.modalData;
+
+    if (m.tipo === 'confirmar_cancelacion') {
+      return `
+        <div class="modal-overlay" data-cerrar-modal>
+          <div class="modal" data-stop>
+            <div class="modal__blob" style="background: linear-gradient(135deg, #fbbf24, #d97706);"></div>
+            <div style="position:relative;">
+              <div class="modal__check" style="color: #fbbf24;">⚠️</div>
+              <h3 class="modal__titulo">¿Cancelar cita?</h3>
+              <p class="modal__texto">¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer.</p>
+              <div style="display: flex; gap: 10px; margin-top: 22px;">
+                <button type="button" class="btn-secundario" style="flex: 1;" data-cerrar-modal>No, mantener</button>
+                <button type="button" class="btn-primario btn-primario--plano" style="flex: 1; background: #ef4444;" data-ejecutar-cancelar="${m.idConsulta}">Sí, cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    const c = m.cita;
+    const isCancel = m.tipo === 'cancelacion';
+
+    const titulo = isCancel ? '¡Cita cancelada!' : '¡Cita confirmada!';
+    const texto = isCancel
+      ? 'La cita fue cancelada exitosamente y el horario liberado.'
+      : 'Tu reserva quedó registrada correctamente.';
+    const checkIco = isCancel ? '✕' : '✓';
+    const colorStyle = isCancel ? 'background: linear-gradient(135deg, #ef4444, #dc2626);' : '';
+    const colorTxt = isCancel ? 'color: #ef4444;' : '';
+
     const fila = (et, val) => `
       <div class="modal__fila"><dt>${et}</dt><dd>${e(val)}</dd></div>`;
     return `
       <div class="modal-overlay" data-cerrar-modal>
         <div class="modal" data-stop>
-          <div class="modal__blob"></div>
+          <div class="modal__blob" style="${colorStyle}"></div>
           <div style="position:relative;">
-            <div class="modal__check">✓</div>
-            <h3 class="modal__titulo">¡Cita confirmada!</h3>
-            <p class="modal__texto">Tu reserva quedó registrada correctamente.</p>
+            <div class="modal__check" style="${colorTxt}">${checkIco}</div>
+            <h3 class="modal__titulo">${titulo}</h3>
+            <p class="modal__texto">${texto}</p>
             <div class="modal__detalle">
               ${fila('📅 Fecha', c.date)}
               ${fila('🕑 Hora', c.time)}
@@ -264,6 +341,92 @@
       </div>`;
   }
 
+  /* ----- Módulo de seguimiento / cancelación ----- */
+
+  function tplSeguimiento() {
+    const usuario = Auth.usuarioActual();
+
+    // Sin sesión activa: invitar a iniciar sesión.
+    if (!usuario) {
+      return `
+        <section class="card seguimiento">
+          <h2 class="card__titulo">Mis citas</h2>
+          <p class="card__sub">Inicia sesión para ver y gestionar tus citas agendadas</p>
+          <div class="seguimiento__vacio">
+            <span>🔒</span>
+            <p>Para ver tus citas necesitas una cuenta.</p>
+            <button type="button" class="seguimiento__login-enlace" data-ir-cuenta>Iniciar sesión</button>
+          </div>
+        </section>`;
+    }
+
+    const citas = Consultas.listarPorUsuario(usuario.id);
+
+    // Con sesión pero sin citas.
+    if (!citas.length) {
+      const avisoHtml = estado.tracking.aviso
+        ? `<div class="seguimiento__aviso seguimiento__aviso--${estado.tracking.aviso.tipo === 'ok' ? 'ok' : 'error'}">${e(estado.tracking.aviso.mensaje)}</div>`
+        : '';
+      return `
+        <section class="card seguimiento">
+          <h2 class="card__titulo">Mis citas</h2>
+          <p class="card__sub">Aquí aparecerán las citas que agendes con tu cuenta</p>
+          ${avisoHtml}
+          <div class="seguimiento__vacio">
+            <span>📅</span>
+            <p>No tienes citas registradas aún. Selecciona un horario arriba para agendar tu primera cita.</p>
+          </div>
+        </section>`;
+    }
+
+    // Con sesión y con citas: listar todas.
+    const item = (ico, rotulo, valor) => `
+      <div class="seguimiento__item">
+        <div class="seguimiento__item-ico">${ico}</div>
+        <div>
+          <div class="seguimiento__item-rotulo">${rotulo}</div>
+          <div class="seguimiento__item-valor">${e(valor)}</div>
+        </div>
+      </div>`;
+
+    const tarjetas = citas.map((c) => {
+      const meta = Consultas.META[c.status] || { label: c.status, clase: c.status };
+      const puedeCancel = c.status === 'pending';
+      const acciones = puedeCancel
+        ? `<div class="seguimiento__acciones">
+             <button type="button" class="btn-cancelar" data-cancelar="${c.id}">Cancelar cita</button>
+           </div>`
+        : '';
+      return `
+        <div class="seguimiento__cita">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <span class="badge badge--${meta.clase}"><span class="badge__dot"></span>${meta.label}</span>
+          </div>
+          <div class="seguimiento__detalle">
+            ${item('🐾', 'Mascota', c.mascota)}
+            ${item('📅', 'Fecha', c.date)}
+            ${item('🕑', 'Hora', c.time)}
+            ${item('🩺', 'Motivo', c.motivo)}
+          </div>
+          ${acciones}
+        </div>`;
+    }).join('');
+
+    const avisoHtml = estado.tracking.aviso
+      ? `<div class="seguimiento__aviso seguimiento__aviso--${estado.tracking.aviso.tipo === 'ok' ? 'ok' : 'error'}">${e(estado.tracking.aviso.mensaje)}</div>`
+      : '';
+
+    return `
+      <section class="card seguimiento">
+        <h2 class="card__titulo">Mis citas</h2>
+        <p class="card__sub">Gestiona las citas agendadas con tu cuenta</p>
+        ${avisoHtml}
+        <div class="seguimiento__lista">
+          ${tarjetas}
+        </div>
+      </section>`;
+  }
+
   function renderCliente() {
     DOM.montar('main', `
       <div class="contenedor app-main">
@@ -273,6 +436,7 @@
           ${tplFormulario()}
           ${tplResumen()}
         </section>
+        ${tplSeguimiento()}
         ${tplTokens()}
       </div>`);
     DOM.montar('#capa-modal', tplModal());
@@ -302,6 +466,12 @@
   }
 
   function confirmarCita() {
+    // Sin sesión activa no se agenda: se solicita iniciar sesión primero.
+    if (!Auth.sesionActiva()) {
+      estado.requiereLogin = true;
+      renderCliente();
+      return;
+    }
     const errors = Validacion.validarCita(estado.form, estado.selectedSlotId);
     if (Object.keys(errors).length) {
       estado.errors = errors;
@@ -310,27 +480,68 @@
     }
     const sel = Horarios.buscarSlot(estado.selectedSlotId);
     const f = estado.form;
+    const usuario = Auth.usuarioActual();
 
-    Mascotas.registrar({ nombre: f.mascota, motivo: f.motivo });
+    Mascotas.registrar({ nombre: f.mascota, motivo: f.motivo, usuarioId: usuario.id });
     const consulta = Consultas.reservar({
       cliente: f.cliente, contacto: f.contacto, mascota: f.mascota,
-      motivo: f.motivo, day: sel.day, slot: sel.slot,
+      motivo: f.motivo, day: sel.day, slot: sel.slot, usuarioId: usuario.id,
     });
     Horarios.ocupar(sel.slot.id);
     const aviso = Notificaciones.crear(consulta);
 
-    estado.confirm = aviso;
+    estado.modalData = { tipo: 'reserva', cita: aviso };
     estado.modalOpen = true;
-    estado.form = { cliente: '', contacto: '', mascota: '', motivo: '' };
+    estado.form = datosPrecargados();
     estado.selectedSlotId = null;
     estado.errors = {};
+    estado.requiereLogin = false;
     renderCliente();
+  }
+
+  /**
+   * Formulario base: precarga nombre y contacto del cliente con sesión
+   * activa; deja mascota y motivo en blanco para la nueva cita.
+   */
+  function datosPrecargados() {
+    const u = Auth.usuarioActual();
+    return {
+      cliente: u ? (u.nombre || '') : '',
+      contacto: u ? (u.email || '') : '',
+      mascota: '',
+      motivo: '',
+    };
   }
 
   function cerrarModal() {
     estado.modalOpen = false;
-    estado.confirm = null;
+    estado.modalData = null;
     DOM.montar('#capa-modal', '');
+  }
+
+  function cancelarConsultaCliente(id) {
+    estado.modalData = { tipo: 'confirmar_cancelacion', idConsulta: id };
+    estado.modalOpen = true;
+    renderCliente();
+  }
+
+  function ejecutarCancelacion(id) {
+    const cancelada = Consultas.cancelar(id);
+    if (!cancelada) {
+      estado.tracking.aviso = { tipo: 'error', mensaje: 'Solo se pueden cancelar consultas en estado pendiente.' };
+      renderCliente();
+      return;
+    }
+
+    // Liberar el slot del horario si está registrado.
+    if (cancelada.slotId) {
+      Horarios.desocupar(cancelada.slotId);
+    }
+
+    estado.tracking.aviso = null;
+    estado.modalData = { tipo: 'cancelacion', cita: cancelada };
+    estado.modalOpen = true;
+    renderCliente();
   }
 
   function wireCliente() {
@@ -347,8 +558,15 @@
     });
     DOM.delegar(main, 'click', '[data-slot]', (_ev, el) => seleccionarSlot(el.getAttribute('data-slot')));
     DOM.delegar(main, 'click', '[data-submit]', () => confirmarCita());
+    DOM.delegar(main, 'click', '[data-cancelar]', (_ev, el) => cancelarConsultaCliente(Number(el.getAttribute('data-cancelar'))));
+    DOM.delegar(main, 'click', '[data-ir-cuenta]', () => Router.irACuenta());
 
     modal.addEventListener('click', (ev) => {
+      const btnCancelar = ev.target.closest('[data-ejecutar-cancelar]');
+      if (btnCancelar) {
+        ejecutarCancelacion(Number(btnCancelar.getAttribute('data-ejecutar-cancelar')));
+        return;
+      }
       if (ev.target.closest('[data-cerrar-modal]')) { cerrarModal(); return; }
       if (ev.target.closest('[data-stop]')) ev.stopPropagation();
     });
@@ -358,13 +576,18 @@
 
   function tplFila(row) {
     const meta = Consultas.META[row.status];
-    // Las pendientes ofrecen la acción de confirmar; el resto muestra el
-    // badge cíclico para avanzar el ciclo de atención.
-    const accion = row.status === 'pending'
-      ? `<button type="button" class="btn-confirmar" data-confirmar="${row.id}">Confirmar</button>`
-      : `<button type="button" class="badge badge--${meta.clase}" data-cycle="${row.id}" title="Cambiar estado">
+    // Las pendientes ofrecen la acción de confirmar; las canceladas muestran
+    // solo el badge sin acción; el resto muestra el badge cíclico.
+    let accion;
+    if (row.status === 'pending') {
+      accion = `<button type="button" class="btn-confirmar" data-confirmar="${row.id}">Confirmar</button>`;
+    } else if (row.status === 'cancelado') {
+      accion = `<span class="badge badge--${meta.clase}"><span class="badge__dot"></span>${meta.label}</span>`;
+    } else {
+      accion = `<button type="button" class="badge badge--${meta.clase}" data-cycle="${row.id}" title="Cambiar estado">
             <span class="badge__dot"></span>${meta.label}
           </button>`;
+    }
     return `
       <div class="tabla__fila">
         <div><span class="tabla__cola">${row.queue}</span></div>
@@ -437,7 +660,7 @@
             <div class="contador"><span class="contador__dot contador__dot--confirmed"></span><span class="contador__num">${c.confirmed}</span><span class="contador__lbl">Confirmadas</span></div>
             <div class="contador"><span class="contador__dot contador__dot--progreso"></span><span class="contador__num">${c.in_progress}</span><span class="contador__lbl">En progreso</span></div>
             <div class="contador"><span class="contador__dot contador__dot--done"></span><span class="contador__num">${c.done}</span><span class="contador__lbl">Atendidas</span></div>
-            <div class="contador"><span class="contador__dot contador__dot--canceled"></span><span class="contador__num">${c.canceled}</span><span class="contador__lbl">Canceladas</span></div>
+            <div class="contador"><span class="contador__dot contador__dot--cancelado"></span><span class="contador__num">${c.cancelado}</span><span class="contador__lbl">Canceladas</span></div>
           </div>
         </div>
         ${tplFiltrosConsultas(totalFiltrado)}
@@ -599,6 +822,12 @@
   /* ===================== Arranque ===================== */
 
   function init() {
+    // Control de acceso: el panel admin exige una sesión de administrador.
+    if (Auth.esAdmin() && (!Auth.sesionActiva() || Auth.rolUsuario() !== 'admin')) {
+      Router.irACuenta();
+      return;
+    }
+
     DOM.montar('header', tplHeader());
     DOM.sel('header').classList.add('app-header');
 
@@ -609,18 +838,32 @@
       document.body.appendChild(capa);
     }
 
-    // Conmutador de rol en el header.
-    DOM.delegar(DOM.sel('header'), 'click', '[data-ir]', (_ev, el) => {
-      el.getAttribute('data-ir') === 'admin' ? Router.irAAdmin() : Router.irACliente();
-    });
+    // Acciones de cuenta en el header.
+    const header = DOM.sel('header');
+    DOM.delegar(header, 'click', '[data-ir-cuenta]', () => Router.irACuenta());
+    DOM.delegar(header, 'click', '[data-cerrar-sesion]', () => cerrarSesion());
+    DOM.delegar(header, 'click', '[data-tema-toggle]', () => alternarTema());
 
     if (Auth.esAdmin()) {
       renderAdmin();
       wireAdmin();
     } else {
+      estado.form = datosPrecargados();
       renderCliente();
       wireCliente();
     }
+  }
+
+  /** Cierra la sesión y recarga la vista cliente sin datos precargados. */
+  function cerrarSesion() {
+    Auth.cerrarSesion();
+    location.reload();
+  }
+
+  /** Alterna el tema y refresca el header (el icono del botón cambia). */
+  function alternarTema() {
+    Tema.alternar();
+    DOM.montar('header', tplHeader());
   }
 
   document.addEventListener('DOMContentLoaded', init);
