@@ -9,7 +9,7 @@
  * Se persiste vía Storage; sembrado inicial la primera vez.
  *
  * Interfaz pública: META, reservar, listar, confirmar, avanzarEstado,
- *                   agrupadasPorFecha, contadores.
+ *                   filtrar, agrupadasPorFecha, contadores.
  */
 const Consultas = (() => {
   const CLAVE = 'consultas';
@@ -19,8 +19,9 @@ const Consultas = (() => {
   const META = {
     pending:     { label: 'Pendiente',   clase: 'pending' },
     confirmed:   { label: 'Confirmada',  clase: 'confirmed' },
-    in_progress: { label: 'En progreso', clase: 'in_progress' },
-    done:        { label: 'Atendida',    clase: 'done' },
+    in_progress: { label: 'En curso',    clase: 'in_progress' },
+    done:        { label: 'Completada',  clase: 'done' },
+    canceled:    { label: 'Cancelada',   clase: 'canceled' },
   };
 
   // Ciclo de atención posterior a la confirmación (el badge del panel admin
@@ -30,6 +31,7 @@ const Consultas = (() => {
     confirmed: 'in_progress',
     in_progress: 'done',
     done: 'pending',
+    canceled: 'pending',
   };
 
   const SEMILLA = [
@@ -50,6 +52,37 @@ const Consultas = (() => {
   function listar() {
     asegurarSembrado();
     return Storage.leer(CLAVE, []);
+  }
+
+  function normalizarTexto(texto) {
+    return String(texto || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function coincideEstado(consulta, estado) {
+    return !estado || estado === 'all' || consulta.status === estado;
+  }
+
+  function coincideBusqueda(consulta, busqueda) {
+    const termino = normalizarTexto(busqueda);
+    if (!termino) return true;
+
+    // El "dueno" de la mascota se guarda en la consulta como cliente.
+    const camposBuscables = [
+      consulta.mascota,
+      consulta.cliente,
+    ].map(normalizarTexto);
+
+    return camposBuscables.some((valor) => valor.includes(termino));
+  }
+
+  function filtrar({ estado = 'all', busqueda = '' } = {}) {
+    return listar().filter((consulta) =>
+      coincideEstado(consulta, estado) && coincideBusqueda(consulta, busqueda)
+    );
   }
 
   function persistir(consultas) {
@@ -116,8 +149,8 @@ const Consultas = (() => {
    * ordena por hora ascendente formando la cola FIFO numerada.
    * Devuelve [{ date, count, rows: [{ ...consulta, queue }] }].
    */
-  function agrupadasPorFecha() {
-    const consultas = listar();
+  function agrupadasPorFecha(filtros = {}) {
+    const consultas = filtrar(filtros);
     const ranks = [...new Set(consultas.map((c) => c.rank))].sort((a, b) => a - b);
     return ranks.map((rk) => {
       const rows = consultas
@@ -128,12 +161,14 @@ const Consultas = (() => {
     });
   }
 
-  /** Conteo por estado: { pending, confirmed, in_progress, done }. */
+  /** Conteo por estado: { pending, confirmed, in_progress, done, canceled }. */
   function contadores() {
-    const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0 };
-    listar().forEach((c) => { acc[c.status]++; });
+    const acc = { pending: 0, confirmed: 0, in_progress: 0, done: 0, canceled: 0 };
+    listar().forEach((c) => {
+      if (Object.prototype.hasOwnProperty.call(acc, c.status)) acc[c.status]++;
+    });
     return acc;
   }
 
-  return { META, reservar, listar, confirmar, avanzarEstado, agrupadasPorFecha, contadores };
+  return { META, reservar, listar, confirmar, avanzarEstado, filtrar, agrupadasPorFecha, contadores };
 })();
