@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Spec — Tema</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; color: #1d3b46; }
+    li { margin: 4px 0; }
+    .ok::before   { content: '✔ '; color: #16a34a; }
+    .fail::before { content: '✘ '; color: #e0457b; }
+    .fail { color: #e0457b; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Spec del módulo de tema</h1>
+  <ul id="resultados"></ul>
+  <script src="../assets/js/lib/storage.js"></script>
+  <script src="../assets/js/lib/tema.js"></script>
+  <script>
+    const salida = document.getElementById('resultados');
+    function it(nombre, fn) {
+      const li = document.createElement('li');
+      try { fn(); li.className = 'ok'; li.textContent = nombre; }
+      catch (err) { li.className = 'fail'; li.textContent = nombre + ' — ' + err.message; }
+      salida.appendChild(li);
+    }
+    function assert(cond, msg) { if (!cond) throw new Error(msg || 'aserción fallida'); }
+
+    const html = document.documentElement;
+    // Estado limpio.
+    Storage.eliminar('tema');
+
+    it('actual() es "claro" por defecto', () => {
+      assert(Tema.actual() === 'claro', 'sin preferencia guardada debe ser claro');
+      assert(Tema.esOscuro() === false, 'esOscuro debe ser false por defecto');
+    });
+
+    it('establecer("oscuro") persiste la preferencia y marca <html>', () => {
+      Tema.establecer('oscuro');
+      assert(Storage.leer('tema') === 'oscuro', 'debe guardar la preferencia');
+      assert(Tema.actual() === 'oscuro', 'actual debe reflejar oscuro');
+      assert(html.getAttribute('data-tema') === 'oscuro', 'debe aplicar data-tema=oscuro en <html>');
+      assert(Tema.esOscuro() === true, 'esOscuro debe ser true');
+    });
+
+    it('alternar() vuelve a claro y actualiza el atributo', () => {
+      const t = Tema.alternar();
+      assert(t === 'claro', 'alternar desde oscuro debe devolver claro');
+      assert(Tema.actual() === 'claro', 'actual debe ser claro tras alternar');
+      assert(html.getAttribute('data-tema') === 'claro', 'data-tema debe quedar en claro');
+    });
+
+    it('alternar() desde claro pasa a oscuro', () => {
+      const t = Tema.alternar();
+      assert(t === 'oscuro', 'alternar desde claro debe devolver oscuro');
+      assert(html.getAttribute('data-tema') === 'oscuro', 'data-tema debe quedar en oscuro');
+    });
+
+    it('aplicar() normaliza valores inválidos a "claro"', () => {
+      const t = Tema.aplicar('arcoiris');
+      assert(t === 'claro', 'un tema desconocido debe caer a claro');
+      assert(html.getAttribute('data-tema') === 'claro', 'data-tema debe quedar en claro');
+    });
+
+    it('establecer() ignora valores inválidos (los guarda como "claro")', () => {
+      Tema.establecer('neón');
+      assert(Storage.leer('tema') === 'claro', 'un valor inválido debe persistirse como claro');
+    });
+
+    // Limpieza final.
+    Storage.eliminar('tema');
+    html.removeAttribute('data-tema');
+  </script>
+</body>
+</html>
