@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Spec — Historial Clínico</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    .pass { color: green; }
+    .fail { color: red; font-weight: bold; }
+    li { margin-bottom: 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Spec — Historial Clínico (#3)</h1>
+  <ul id="resultados"></ul>
+  <script src="../assets/js/lib/storage.js"></script>
+  <script src="../assets/js/modules/mascotas.js"></script>
+  <script src="../assets/js/modules/consultas.js"></script>
+  <script>
+    const resultados = document.getElementById("resultados");
+    let total = 0;
+    let pasados = 0;
+
+    function assert(nombre, condicion) {
+      total++;
+      const li = document.createElement("li");
+      if (condicion) {
+        pasados++;
+        li.className = "pass";
+        li.textContent = "PASS: " + nombre;
+      } else {
+        li.className = "fail";
+        li.textContent = "FAIL: " + nombre;
+      }
+      resultados.append(li);
+    }
+
+    localStorage.clear();
+
+    Mascotas.registrar({ nombre: "Max", especie: "Perro", raza: "Labrador", clienteId: "cl1" });
+    Mascotas.registrar({ nombre: "Luna", especie: "Gato", raza: "Siamés", clienteId: "cl1" });
+
+    const mascota1 = Mascotas.listar()[0];
+    const mascota2 = Mascotas.listar()[1];
+
+    Consultas.reservar({ mascotaId: mascota1.id, fecha: "2026-07-10", horario: "10:00" });
+    Consultas.reservar({ mascotaId: mascota1.id, fecha: "2026-07-12", horario: "11:00" });
+    Consultas.reservar({ mascotaId: mascota2.id, fecha: "2026-07-11", horario: "09:00" });
+
+    const c1 = Consultas.listar()[0];
+    const c2 = Consultas.listar()[1];
+    const c3 = Consultas.listar()[2];
+
+    assert("Consultas iniciales en estado pendiente", c1.estado === "pendiente");
+
+    Consultas.completar(c1.id, {
+      peso: 12.5,
+      sintomas: "Tos persistente",
+      diagnostico: "Bronquitis",
+      tratamiento: "Antibióticos por 7 días"
+    });
+
+    const c1Actualizada = Consultas.obtener(c1.id);
+    assert("Estado cambia a completado", c1Actualizada.estado === "completado");
+    assert("notasClinicas.peso correcto", c1Actualizada.notasClinicas.peso === 12.5);
+    assert("notasClinicas.sintomas correcto", c1Actualizada.notasClinicas.sintomas === "Tos persistente");
+    assert("notasClinicas.diagnostico correcto", c1Actualizada.notasClinicas.diagnostico === "Bronquitis");
+    assert("notasClinicas.tratamiento correcto", c1Actualizada.notasClinicas.tratamiento === "Antibióticos por 7 días");
+    assert("notasClinicas.fechaRegistro existe", typeof c1Actualizada.notasClinicas.fechaRegistro === "string");
+
+    Consultas.completar(c2.id, {
+      peso: 13.0,
+      sintomas: "Vómitos",
+      diagnostico: "Gastroenteritis",
+      tratamiento: "Dieta blanda"
+    });
+
+    const historial1 = Consultas.historialMascota(mascota1.id);
+    assert("Historial mascota 1 tiene 2 entradas", historial1.length === 2);
+    assert("Historial ordenado por fecha descendente", new Date(historial1[0].fecha) >= new Date(historial1[1].fecha));
+
+    const historial2 = Consultas.historialMascota(mascota2.id);
+    assert("Historial mascota 2 vacío (no completada)", historial2.length === 0);
+
+    Consultas.completar(c3.id, {
+      peso: 4.2,
+      sintomas: "Ninguno",
+      diagnostico: "Control general",
+      tratamiento: "Ninguno"
+    });
+
+    const historial2Ahora = Consultas.historialMascota(mascota2.id);
+    assert("Historial mascota 2 ahora tiene 1 entrada", historial2Ahora.length === 1);
+    assert("Entrada de historial mascota 2 tiene notasClinicas", historial2Ahora[0].notasClinicas.peso === 4.2);
+
+    const completadas = Consultas.listar({ estado: "completado" });
+    assert("Filtrar por estado completado retorna 3", completadas.length === 3);
+
+    const pendientes = Consultas.listar({ estado: "pendiente" });
+    assert("Filtrar por estado pendiente retorna 0", pendientes.length === 0);
+
+    const historialMascotaEspecifica = Consultas.historialMascota(mascota1.id);
+    assert("Historial solo incluye consultas de la mascota correcta", historialMascotaEspecifica.every(c => c.mascotaId === mascota1.id));
+
+    const resumen = document.createElement("li");
+    resumen.className = pasados === total ? "pass" : "fail";
+    resumen.textContent = `${pasados}/${total} tests pasados`;
+    resultados.append(resumen);
+
+    localStorage.clear();
+  </script>
+</body>
+</html>

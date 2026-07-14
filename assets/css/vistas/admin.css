@@ -1,1 +1,91 @@
-/* Estilos del panel de administración */
+.tabla-consultas {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tabla-consultas th,
+.tabla-consultas td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tabla-consultas th {
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7280;
+}
+
+.tabla-consultas tr:hover {
+  background: #f3f4f6;
+}
+
+.acciones {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge-pendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-confirmada {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-completado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-cancelada {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.historial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.historial-entrada {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.historial-fecha {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  font-size: 0.85rem;
+}
+
+.historial-campo {
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.vacio {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2rem;
+}
