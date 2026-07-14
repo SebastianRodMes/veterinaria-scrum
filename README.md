@@ -121,3 +121,5 @@ Decisiones de diseño que afecten la estructura del código se registran en `doc
 5. [ ] Historia 3: Ver consultas — tabla de consultas en panel admin
 6. [ ] Historia 4: Confirmar consulta — flujo de confirmación + asignar fecha/hora
 7. [ ] Historia 2: Notificaciones — aviso visual de cita confirmada
+8. [x] #13 Crear logo.
+9. [x] #14 Paleta de colores.
