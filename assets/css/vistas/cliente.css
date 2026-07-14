@@ -257,3 +257,226 @@
   color: #15803d;
   border: 1px solid #bbf7d0;
 }
+
+
+/* ============================================================
+   Historia de usuario #5 — Testimonios públicos
+   ============================================================ */
+
+.testimonios {
+  margin: 30px 0;
+  padding: 30px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-card);
+}
+
+.testimonios__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.testimonios__titulo {
+  margin: 12px 0 5px;
+  color: var(--color-profundo);
+  font-family: var(--fuente-titulo);
+  font-size: 27px;
+  line-height: 1.2;
+}
+
+.testimonios__sub {
+  max-width: 620px;
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.testimonios__resumen {
+  min-width: 170px;
+  padding: 14px 18px;
+  background: #fff9eb;
+  border: 1px solid #fde5a7;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.testimonios__promedio {
+  color: var(--color-profundo);
+  font-family: var(--fuente-titulo);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.testimonios__promedio span {
+  color: #f59e0b;
+}
+
+.testimonios__cantidad {
+  margin-top: 6px;
+  color: #9a6700;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.testimonios__grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(270px, 1fr)
+  );
+  gap: 18px;
+}
+
+/* --- Tarjeta individual --- */
+
+.testimonio-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+  padding: 21px;
+  background: var(--superficie-suave);
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  transition:
+    transform .15s ease,
+    box-shadow .15s ease,
+    border-color .15s ease;
+}
+
+.testimonio-card:hover {
+  transform: translateY(-2px);
+  border-color: #b8dfeb;
+  box-shadow: 0 16px 35px -24px rgba(3, 4, 94, .45);
+}
+
+.testimonio-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.testimonio__estrellas {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.testimonio__estrella {
+  color: #d5dde2;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.testimonio__estrella--activa {
+  color: #f59e0b;
+  filter: drop-shadow(
+    0 4px 6px rgba(245, 158, 11, .18)
+  );
+}
+
+.testimonio-card__calificacion {
+  padding: 5px 9px;
+  background: #fff3d6;
+  border-radius: 999px;
+  color: #9a6700;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.testimonio-card__comentario {
+  flex: 1;
+  margin: 18px 0;
+  padding: 0;
+  border: none;
+  color: var(--texto-suave);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.testimonio-card__persona {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-top: 15px;
+  border-top: 1px solid var(--borde-suave);
+}
+
+.testimonio-card__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--grad-primario);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 8px 17px -10px rgba(0, 119, 182, .8);
+}
+
+.testimonio-card__cliente {
+  color: var(--color-profundo);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.testimonio-card__detalle {
+  margin-top: 2px;
+  color: var(--texto-tenue);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.testimonio-card__fecha {
+  margin-top: 12px;
+  color: var(--texto-mudo);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* --- Diseño adaptable --- */
+
+@media (max-width: 700px) {
+  .testimonios {
+    padding: 23px;
+  }
+
+  .testimonios__head {
+    align-items: stretch;
+  }
+
+  .testimonios__resumen {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .testimonios {
+    margin: 22px 0;
+    padding: 19px;
+  }
+
+  .testimonios__titulo {
+    font-size: 23px;
+  }
+
+  .testimonios__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .testimonio-card {
+    min-height: auto;
+  }
+}

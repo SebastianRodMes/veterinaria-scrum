@@ -175,7 +175,7 @@ Decisiones de diseño que afecten la estructura del código se registran en `doc
 9. [ ] Historia 7: Registro de múltiples mascotas — persistencia relacional cliente-mascota
 10. [ ] Historia 8: Búsqueda y filtrado de consultas — UI de búsqueda en `admin.html`
 11. [ ] Historia 9: Historial clínico — guardado de notas médicas post-consulta
-12. [ ] Historia 10: Calificación del servicio — componente de feedback con estrellas
+12. [x] Historia 10: Calificación del servicio — componente de feedback con estrellas
 
 ## Diseño visual
 
