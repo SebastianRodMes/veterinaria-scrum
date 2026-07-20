@@ -1,120 +1,332 @@
+/* ============================================================
+   Compatibilidad — Modal DOM, formularios clínicos y botones
+   ============================================================ */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .modal {
-  background: #fff;
-  border-radius: 8px;
   width: 90%;
   max-width: 520px;
-  max-height: 80vh;
+  max-height: 88vh;
   overflow-y: auto;
+  border-radius: 14px;
+  background: var(--superficie, #fff);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
+  position: relative;
+  z-index: 1;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e5e7eb;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--borde, #e5e7eb);
+  text-align: left;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  color: var(--color-profundo, #163844);
+  font-family: var(--fuente-titulo, inherit);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .modal-cerrar {
-  background: none;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: none;
-  font-size: 1.4rem;
+  border-radius: 10px;
+  background: #eaf3f8;
+  color: #5d8090;
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  line-height: 1;
   cursor: pointer;
-  color: #6b7280;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.12s ease;
+}
+
+.modal-cerrar:hover {
+  background: #dcecf3;
+  color: var(--color-profundo, #163844);
+  transform: translateY(-1px);
+}
+
+.modal-cerrar:active {
+  transform: translateY(0);
+}
+
+.modal-cerrar:focus-visible {
+  outline: 3px solid rgba(0, 180, 216, 0.25);
+  outline-offset: 2px;
 }
 
 .modal-body {
-  padding: 1.25rem;
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+  text-align: left;
 }
 
+/* ============================================================
+   Formularios genéricos y notas clínicas
+   ============================================================ */
+
 .form-grupo {
-  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 15px;
+}
+
+.form-grupo:last-child {
+  margin-bottom: 0;
 }
 
 .form-grupo label {
   display: block;
-  margin-bottom: 0.25rem;
-  font-weight: 600;
-  font-size: 0.875rem;
+  margin: 0;
+  color: #28505d;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .form-grupo input,
-.form-grupo textarea {
+.form-grupo textarea,
+.form-grupo select {
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 0.875rem;
   box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1.5px solid #d6eef5;
+  border-radius: 12px;
+  background: var(--superficie-suave, #f7fbfd);
+  color: var(--color-profundo, #163844);
+  font-family: var(--fuente-texto, inherit);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.form-grupo textarea {
+  min-height: 88px;
+  resize: vertical;
 }
 
 .form-grupo input:focus,
-.form-grupo textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+.form-grupo textarea:focus,
+.form-grupo select:focus {
+  border-color: var(--color-acento, #00b4d8);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.12);
+}
+
+.form-grupo input:invalid:not(:placeholder-shown),
+.form-grupo textarea:invalid:not(:placeholder-shown) {
+  border-color: #f2a8c4;
 }
 
 .form-acciones {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
   justify-content: flex-end;
-  margin-top: 1.25rem;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 20px;
 }
 
+/* ============================================================
+   Botones genéricos de la funcionalidad clínica
+   ============================================================ */
+
 .btn {
-  padding: 0.5rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 9px 15px;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
+  font-family: var(--fuente-texto, inherit);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:focus-visible {
+  outline: 3px solid rgba(0, 180, 216, 0.25);
+  outline-offset: 2px;
 }
 
 .btn-sm {
-  padding: 0.25rem 0.6rem;
-  font-size: 0.8rem;
+  min-height: 32px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  font-size: 12px;
 }
 
 .btn-exito {
-  background: #10b981;
+  background: #16a34a;
   color: #fff;
+  box-shadow: 0 8px 18px -11px rgba(22, 163, 74, 0.8);
 }
 
 .btn-exito:hover {
-  background: #059669;
+  background: #15803d;
 }
 
 .btn-info {
-  background: #3b82f6;
+  background: var(--color-primario, #0077b6);
   color: #fff;
+  box-shadow: 0 8px 18px -11px rgba(0, 119, 182, 0.8);
 }
 
 .btn-info:hover {
-  background: #2563eb;
+  background: #03689d;
 }
 
 .btn-cancelar {
-  background: #e5e7eb;
-  color: #374151;
+  background: #e4eff4;
+  color: #4d6f7d;
 }
 
 .btn-cancelar:hover {
-  background: #d1d5db;
+  background: #d6e7ee;
+  color: var(--color-profundo, #163844);
+}
+
+/* ============================================================
+   Ajustes para modales con contenido extenso
+   ============================================================ */
+
+.modal:has(.historial-lista) {
+  max-width: 620px;
+}
+
+.modal--clinico {
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.modal--historial {
+  max-width: 620px;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+/* ============================================================
+   Tema oscuro
+   ============================================================ */
+
+html[data-tema="oscuro"] .modal {
+  background: var(--superficie, #17242b);
+}
+
+html[data-tema="oscuro"] .modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-tema="oscuro"] .modal-header h3 {
+  color: var(--color-profundo, #f1f5f9);
+}
+
+html[data-tema="oscuro"] .modal-cerrar {
+  background: var(--superficie-suave, #23343d);
+  color: var(--texto-tenue, #cbd5e1);
+}
+
+html[data-tema="oscuro"] .form-grupo label {
+  color: var(--texto, #e2e8f0);
+}
+
+html[data-tema="oscuro"] .form-grupo input,
+html[data-tema="oscuro"] .form-grupo textarea,
+html[data-tema="oscuro"] .form-grupo select {
+  background: var(--superficie-suave, #23343d);
+  color: var(--color-profundo, #f1f5f9);
+  border-color: var(--borde, #41535d);
+}
+
+html[data-tema="oscuro"] .form-grupo input:focus,
+html[data-tema="oscuro"] .form-grupo textarea:focus,
+html[data-tema="oscuro"] .form-grupo select:focus {
+  background: var(--superficie, #17242b);
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 520px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 92vh;
+  }
+
+  .modal-header {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .modal-header h3 {
+    font-size: 19px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .form-acciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-acciones .btn {
+    width: 100%;
+  }
 }

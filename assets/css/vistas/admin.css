@@ -1,6 +1,299 @@
+/* ============================================================
+   vistas/admin.css — Panel de citas, contadores, tabla FIFO
+   e historial clínico
+   ============================================================ */
+
+/* ============================================================
+   Encabezado del panel
+   ============================================================ */
+
+.admin-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.admin-head__titulo {
+  margin: 0 0 6px;
+  font-size: clamp(26px, 3.4vw, 34px);
+}
+
+.admin-head__sub {
+  margin: 0;
+  color: var(--texto-tenue);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Contadores
+   ============================================================ */
+
+.contadores {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.contador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+}
+
+.contador__dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.contador__dot--pending {
+  background: var(--estado-pendiente);
+}
+
+.contador__dot--confirmed {
+  background: var(--estado-confirmada);
+}
+
+.contador__dot--progreso {
+  background: var(--estado-progreso);
+}
+
+.contador__dot--done {
+  background: var(--estado-done);
+}
+
+.contador__dot--cancelado {
+  background: var(--estado-cancelado);
+}
+
+.contador__num {
+  color: var(--color-profundo);
+  font-family: var(--fuente-titulo);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.contador__lbl {
+  color: var(--texto-tenue);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ============================================================
+   Filtros
+   ============================================================ */
+
+.admin-filtros {
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) 1fr auto;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  box-shadow: var(--sombra-flotante);
+}
+
+.admin-busqueda {
+  min-width: 0;
+}
+
+.admin-busqueda__input {
+  height: 44px;
+}
+
+.admin-filtros__acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filtro-estado {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid #d6eef5;
+  border-radius: 999px;
+  background: #fff;
+  color: #4d6f7d;
+  font-family: var(--fuente-texto);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    background 0.12s ease;
+}
+
+.filtro-estado:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-acento);
+  color: var(--color-profundo);
+}
+
+.filtro-estado--activo {
+  border-color: var(--color-primario);
+  background: var(--color-profundo);
+  color: #fff;
+}
+
+.admin-filtros__total {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: #eaf3f8;
+  color: #3a6072;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Tabla FIFO actual
+   ============================================================ */
+
+.tabla-wrap {
+  overflow: hidden;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 22px;
+  box-shadow: var(--sombra-card);
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla {
+  min-width: 720px;
+}
+
+.tabla__head,
+.tabla__fila {
+  display: grid;
+  grid-template-columns: 64px 96px 1.4fr 1fr 1.3fr 190px;
+  gap: 12px;
+  align-items: center;
+}
+
+.tabla__head {
+  padding: 14px 18px;
+  color: var(--texto-mudo);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.tabla__grupo-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px 10px;
+}
+
+.tabla__grupo-fecha {
+  color: var(--color-profundo);
+  font-family: var(--fuente-titulo);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.tabla__grupo-linea {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, #dcecf3, transparent);
+}
+
+.tabla__grupo-count {
+  color: #9bb6c0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tabla__fila {
+  padding: 13px 18px;
+  border-top: 1px solid #eef4f7;
+}
+
+.tabla__fila:hover {
+  background: #f8fbfc;
+}
+
+.tabla__cola {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #eaf3f8;
+  color: #3a6072;
+  font-family: var(--fuente-titulo);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.tabla__hora {
+  color: var(--color-profundo);
+  font-family: var(--fuente-titulo);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.tabla__cliente {
+  color: #28505d;
+  font-weight: 700;
+}
+
+.tabla__mascota {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #445566;
+  font-weight: 700;
+}
+
+.tabla__mascota-ico {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #eaf6fb;
+  font-size: 14px;
+}
+
+.tabla__motivo {
+  color: #5d7a86;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Tabla HTML clásica
+   ============================================================ */
+
 .tabla-consultas {
   width: 100%;
   border-collapse: collapse;
+  background: var(--superficie);
   font-size: 0.875rem;
 }
 
@@ -13,21 +306,41 @@
 
 .tabla-consultas th {
   background: #f9fafb;
-  font-weight: 600;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
   color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
-.tabla-consultas tr:hover {
+.tabla-consultas tbody tr {
+  transition: background 0.12s ease;
+}
+
+.tabla-consultas tbody tr:hover {
   background: #f3f4f6;
 }
 
-.acciones {
+/* ============================================================
+   Acciones
+   ============================================================ */
+
+.acciones,
+.tabla__acciones {
   display: flex;
+  align-items: center;
   gap: 0.4rem;
+  flex-wrap: wrap;
 }
+
+.acciones .btn,
+.tabla__acciones .btn {
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Badges compatibles con ambas ramas
+   ============================================================ */
 
 .badge {
   display: inline-block;
@@ -48,15 +361,86 @@
   color: #1e40af;
 }
 
-.badge-completado {
+.badge-en_progreso,
+.badge-en-progreso {
+  background: #d6f2fa;
+  color: #006b84;
+}
+
+.badge-completado,
+.badge-atendida {
   background: #d1fae5;
   color: #065f46;
 }
 
-.badge-cancelada {
+.badge-cancelada,
+.badge-cancelado {
   background: #fee2e2;
   color: #991b1b;
 }
+
+/* ============================================================
+   Formulario de notas clínicas
+   ============================================================ */
+
+.notas-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.notas-form .form-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notas-form .form-grupo label {
+  color: var(--color-profundo);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.notas-form .form-grupo input,
+.notas-form .form-grupo textarea,
+.notas-form .form-grupo select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  border: 1.5px solid #d6eef5;
+  border-radius: 12px;
+  background: var(--superficie-suave);
+  color: var(--color-profundo);
+  font-family: var(--fuente-texto);
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+}
+
+.notas-form .form-grupo input:focus,
+.notas-form .form-grupo textarea:focus,
+.notas-form .form-grupo select:focus {
+  border-color: var(--color-acento);
+}
+
+.notas-form .form-grupo textarea {
+  resize: vertical;
+}
+
+.notas-form .form-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.notas-form .form-acciones .btn {
+  flex: 1;
+}
+
+/* ============================================================
+   Historial clínico
+   ============================================================ */
 
 .historial-lista {
   display: flex;
@@ -65,27 +449,149 @@
 }
 
 .historial-entrada {
-  padding: 0.75rem;
+  padding: 0.9rem;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 10px;
   background: #f9fafb;
 }
 
 .historial-fecha {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
   color: #374151;
   font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .historial-campo {
-  margin-bottom: 0.25rem;
-  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
   color: #4b5563;
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 
+.historial-campo:last-child {
+  margin-bottom: 0;
+}
+
+.historial-campo strong {
+  color: var(--color-profundo);
+}
+
+/* ============================================================
+   Mensajes auxiliares
+   ============================================================ */
+
+.admin-ayuda {
+  margin: 14px 4px 0;
+  color: #8aa4b0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.admin-vacio,
 .vacio {
+  padding: 40px 18px;
   text-align: center;
-  color: #9ca3af;
-  padding: 2rem;
+  color: var(--texto-tenue, #9ca3af);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Tema oscuro
+   ============================================================ */
+
+html[data-tema="oscuro"] .contador,
+html[data-tema="oscuro"] .tabla-wrap,
+html[data-tema="oscuro"] .tabla-consultas {
+  background: var(--superficie);
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .admin-filtros {
+  background: var(--superficie);
+}
+
+html[data-tema="oscuro"] .filtro-estado {
+  background: var(--superficie-suave);
+  color: var(--texto-tenue);
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .filtro-estado--activo {
+  background: var(--color-profundo);
+  color: #fff;
+}
+
+html[data-tema="oscuro"] .tabla__fila,
+html[data-tema="oscuro"] .tabla-consultas th,
+html[data-tema="oscuro"] .tabla-consultas td {
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .tabla__fila:hover,
+html[data-tema="oscuro"] .tabla-consultas tbody tr:hover {
+  background: var(--superficie-suave);
+}
+
+html[data-tema="oscuro"] .tabla-consultas th {
+  background: var(--superficie-suave);
+  color: var(--texto-tenue);
+}
+
+html[data-tema="oscuro"] .historial-entrada {
+  background: var(--superficie-suave);
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .historial-fecha,
+html[data-tema="oscuro"] .historial-campo strong {
+  color: var(--color-profundo);
+}
+
+html[data-tema="oscuro"] .historial-campo {
+  color: var(--texto-tenue);
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 880px) {
+  .admin-filtros {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .admin-filtros__total {
+    justify-content: flex-start;
+  }
+
+  .tabla__head,
+  .tabla__fila {
+    grid-template-columns: 54px 82px 1.2fr 1fr 1.2fr 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .contadores {
+    width: 100%;
+  }
+
+  .contador {
+    flex: 1 1 140px;
+  }
+
+  .form-acciones,
+  .notas-form .form-acciones {
+    flex-direction: column;
+  }
+
+  .form-acciones .btn,
+  .notas-form .form-acciones .btn {
+    width: 100%;
+  }
+
+  .tabla-consultas {
+    min-width: 680px;
+  }
 }
