@@ -98,7 +98,7 @@
   gap: 14px;
   margin-bottom: 16px;
   padding: 14px;
-  background: rgba(255, 255, 255, .76);
+  background: rgba(255, 255, 255, 0.76);
   border: 1px solid var(--borde);
   border-radius: 18px;
   box-shadow: var(--sombra-flotante);
@@ -130,10 +130,10 @@
   font-weight: 800;
   cursor: pointer;
   transition:
-    transform .12s ease,
-    border-color .12s ease,
-    color .12s ease,
-    background .12s ease;
+    transform 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    background 0.12s ease;
 }
 
 .filtro-estado:hover {
@@ -196,7 +196,7 @@
   color: var(--texto-mudo);
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: .4px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 
@@ -287,19 +287,19 @@
 }
 
 /* ============================================================
-   Tabla HTML clásica de la otra rama
+   Tabla HTML clásica
    ============================================================ */
 
 .tabla-consultas {
   width: 100%;
   border-collapse: collapse;
   background: var(--superficie);
-  font-size: .875rem;
+  font-size: 0.875rem;
 }
 
 .tabla-consultas th,
 .tabla-consultas td {
-  padding: .65rem .75rem;
+  padding: 0.65rem 0.75rem;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -307,14 +307,14 @@
 .tabla-consultas th {
   background: #f9fafb;
   color: #6b7280;
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  letter-spacing: .03em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 
 .tabla-consultas tbody tr {
-  transition: background .12s ease;
+  transition: background 0.12s ease;
 }
 
 .tabla-consultas tbody tr:hover {
@@ -329,7 +329,7 @@
 .tabla__acciones {
   display: flex;
   align-items: center;
-  gap: .4rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
 }
 
@@ -342,6 +342,15 @@
    Badges compatibles con ambas ramas
    ============================================================ */
 
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
 .badge-pendiente {
   background: #fef3c7;
   color: #92400e;
@@ -352,17 +361,20 @@
   color: #1e40af;
 }
 
-.badge-en_progreso {
+.badge-en_progreso,
+.badge-en-progreso {
   background: #d6f2fa;
   color: #006b84;
 }
 
-.badge-completado {
+.badge-completado,
+.badge-atendida {
   background: #d1fae5;
   color: #065f46;
 }
 
-.badge-cancelada {
+.badge-cancelada,
+.badge-cancelado {
   background: #fee2e2;
   color: #991b1b;
 }
@@ -377,22 +389,23 @@
   gap: 14px;
 }
 
-.form-grupo {
+.notas-form .form-grupo {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.form-grupo label {
+.notas-form .form-grupo label {
   color: var(--color-profundo);
   font-size: 13px;
   font-weight: 800;
 }
 
-.form-grupo input,
-.form-grupo textarea,
-.form-grupo select {
+.notas-form .form-grupo input,
+.notas-form .form-grupo textarea,
+.notas-form .form-grupo select {
   width: 100%;
+  box-sizing: border-box;
   padding: 11px 13px;
   border: 1.5px solid #d6eef5;
   border-radius: 12px;
@@ -404,24 +417,24 @@
   outline: none;
 }
 
-.form-grupo input:focus,
-.form-grupo textarea:focus,
-.form-grupo select:focus {
+.notas-form .form-grupo input:focus,
+.notas-form .form-grupo textarea:focus,
+.notas-form .form-grupo select:focus {
   border-color: var(--color-acento);
 }
 
-.form-grupo textarea {
+.notas-form .form-grupo textarea {
   resize: vertical;
 }
 
-.form-acciones {
+.notas-form .form-acciones {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 6px;
 }
 
-.form-acciones .btn {
+.notas-form .form-acciones .btn {
   flex: 1;
 }
 
@@ -436,23 +449,23 @@
 }
 
 .historial-entrada {
-  padding: .9rem;
+  padding: 0.9rem;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   background: #f9fafb;
 }
 
 .historial-fecha {
-  margin-bottom: .6rem;
+  margin-bottom: 0.6rem;
   color: #374151;
-  font-size: .85rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
 .historial-campo {
-  margin-bottom: .35rem;
+  margin-bottom: 0.35rem;
   color: #4b5563;
-  font-size: .85rem;
+  font-size: 0.85rem;
   line-height: 1.45;
 }
 
@@ -479,8 +492,64 @@
 .vacio {
   padding: 40px 18px;
   text-align: center;
-  color: var(--texto-tenue);
+  color: var(--texto-tenue, #9ca3af);
   font-weight: 600;
+}
+
+/* ============================================================
+   Tema oscuro
+   ============================================================ */
+
+html[data-tema="oscuro"] .contador,
+html[data-tema="oscuro"] .tabla-wrap,
+html[data-tema="oscuro"] .tabla-consultas {
+  background: var(--superficie);
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .admin-filtros {
+  background: var(--superficie);
+}
+
+html[data-tema="oscuro"] .filtro-estado {
+  background: var(--superficie-suave);
+  color: var(--texto-tenue);
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .filtro-estado--activo {
+  background: var(--color-profundo);
+  color: #fff;
+}
+
+html[data-tema="oscuro"] .tabla__fila,
+html[data-tema="oscuro"] .tabla-consultas th,
+html[data-tema="oscuro"] .tabla-consultas td {
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .tabla__fila:hover,
+html[data-tema="oscuro"] .tabla-consultas tbody tr:hover {
+  background: var(--superficie-suave);
+}
+
+html[data-tema="oscuro"] .tabla-consultas th {
+  background: var(--superficie-suave);
+  color: var(--texto-tenue);
+}
+
+html[data-tema="oscuro"] .historial-entrada {
+  background: var(--superficie-suave);
+  border-color: var(--borde);
+}
+
+html[data-tema="oscuro"] .historial-fecha,
+html[data-tema="oscuro"] .historial-campo strong {
+  color: var(--color-profundo);
+}
+
+html[data-tema="oscuro"] .historial-campo {
+  color: var(--texto-tenue);
 }
 
 /* ============================================================
@@ -512,11 +581,13 @@
     flex: 1 1 140px;
   }
 
-  .form-acciones {
+  .form-acciones,
+  .notas-form .form-acciones {
     flex-direction: column;
   }
 
-  .form-acciones .btn {
+  .form-acciones .btn,
+  .notas-form .form-acciones .btn {
     width: 100%;
   }
 

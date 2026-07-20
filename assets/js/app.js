@@ -79,6 +79,9 @@
   const estadoAdmin = {
     confirmId: null,
     exito: null,
+    consultaClinicaId: null,
+    historialConsultaId: null,
+    errorClinico: null,
     filtroEstado: 'all',
     busqueda: '',
   };
@@ -2006,59 +2009,278 @@ function tplTarjetaTestimonio(resena) {
      Vista del administrador
      ============================================================ */
 
+  /**
+   * Devuelve una consulta completa comparando el ID como texto.
+   * Esto mantiene compatibilidad con identificadores numéricos o string.
+   */
+  function obtenerConsultaAdmin(id) {
+    return Consultas.listar().find(
+      (item) => String(item.id) === String(id)
+    ) || null;
+  }
+
+  /**
+   * Normaliza los nombres de estado utilizados por ambas ramas.
+   */
+  function normalizarEstadoConsulta(consulta) {
+    const valor = String(
+      consulta.status ||
+      consulta.estado ||
+      'pending'
+    ).toLowerCase();
+
+    const equivalencias = {
+      pendiente: 'pending',
+      pending: 'pending',
+      confirmada: 'confirmed',
+      confirmado: 'confirmed',
+      confirmed: 'confirmed',
+      en_progreso: 'in_progress',
+      'en-progreso': 'in_progress',
+      in_progress: 'in_progress',
+      completado: 'done',
+      completada: 'done',
+      atendida: 'done',
+      done: 'done',
+      cancelada: 'cancelado',
+      cancelado: 'cancelado',
+    };
+
+    return equivalencias[valor] || valor;
+  }
+
+  function notasClinicasConsulta(consulta) {
+    return consulta && consulta.notasClinicas
+      ? consulta.notasClinicas
+      : null;
+  }
+
+  function obtenerMascotaConsulta(consulta) {
+    if (!consulta) {
+      return null;
+    }
+
+    if (
+      consulta.mascotaId !== undefined &&
+      consulta.mascotaId !== null &&
+      typeof Mascotas.obtener === 'function'
+    ) {
+      const mascotaPorId = Mascotas.obtener(
+        consulta.mascotaId
+      );
+
+      if (mascotaPorId) {
+        return mascotaPorId;
+      }
+    }
+
+    if (typeof Mascotas.listar !== 'function') {
+      return null;
+    }
+
+    const nombre = String(
+      consulta.mascota || ''
+    ).trim().toLowerCase();
+
+    if (!nombre) {
+      return null;
+    }
+
+    return Mascotas.listar().find(
+      (mascota) =>
+        String(mascota.nombre || '')
+          .trim()
+          .toLowerCase() === nombre
+    ) || null;
+  }
+
+  function nombreMascotaConsulta(consulta) {
+    const mascota = obtenerMascotaConsulta(
+      consulta
+    );
+
+    return mascota && mascota.nombre
+      ? mascota.nombre
+      : consulta.mascota || 'Desconocida';
+  }
+
+  function fechaConsulta(consulta) {
+    return consulta.date ||
+      consulta.fecha ||
+      'Sin fecha';
+  }
+
+  function horaConsulta(consulta) {
+    return consulta.time ||
+      consulta.horario ||
+      'Sin horario';
+  }
+
+  /**
+   * Obtiene el historial clínico usando mascotaId cuando existe.
+   * Para las citas antiguas, también permite relacionar por nombre.
+   */
+  function historialConsulta(consulta) {
+    const mascota = obtenerMascotaConsulta(
+      consulta
+    );
+
+    const mascotaId =
+      consulta.mascotaId !== undefined &&
+      consulta.mascotaId !== null
+        ? consulta.mascotaId
+        : mascota
+          ? mascota.id
+          : null;
+
+    if (
+      mascotaId !== null &&
+      typeof Consultas.historialMascota === 'function'
+    ) {
+      const historialPorId =
+        Consultas.historialMascota(mascotaId) || [];
+
+      if (historialPorId.length) {
+        return historialPorId;
+      }
+    }
+
+    const nombre = nombreMascotaConsulta(
+      consulta
+    ).trim().toLowerCase();
+
+    return Consultas.listar()
+      .filter((item) => {
+        const mismoNombre =
+          nombreMascotaConsulta(item)
+            .trim()
+            .toLowerCase() === nombre;
+
+        return mismoNombre &&
+          Boolean(notasClinicasConsulta(item));
+      })
+      .sort((a, b) => {
+        const fechaA = `${fechaConsulta(a)} ${horaConsulta(a)}`;
+        const fechaB = `${fechaConsulta(b)} ${horaConsulta(b)}`;
+
+        return fechaB.localeCompare(fechaA);
+      });
+  }
+
+  function metaConsulta(consulta) {
+    const status = normalizarEstadoConsulta(
+      consulta
+    );
+
+    if (
+      Consultas.META &&
+      Consultas.META[status]
+    ) {
+      return Consultas.META[status];
+    }
+
+    const etiquetas = {
+      pending: 'Pendiente',
+      confirmed: 'Confirmada',
+      in_progress: 'En progreso',
+      done: 'Atendida',
+      cancelado: 'Cancelada',
+    };
+
+    return {
+      label: etiquetas[status] || status,
+      clase: status,
+    };
+  }
+
   function tplFila(fila) {
-    const meta =
-      Consultas.META[fila.status];
+    const consulta =
+      obtenerConsultaAdmin(fila.id) || fila;
 
-    let accion;
+    const status =
+      normalizarEstadoConsulta(consulta);
 
-    if (fila.status === 'pending') {
-      accion = `
+    const meta = metaConsulta(consulta);
+
+    let accionEstado;
+
+    if (status === 'pending') {
+      accionEstado = `
         <button
           type="button"
           class="btn-confirmar"
-          data-confirmar="${fila.id}"
+          data-confirmar="${consulta.id}"
         >
           Confirmar
         </button>
       `;
     } else if (
-      fila.status === 'cancelado'
+      status === 'cancelado' ||
+      status === 'done'
     ) {
-      accion = `
+      accionEstado = `
         <span class="badge badge--${meta.clase}">
           <span class="badge__dot"></span>
-          ${meta.label}
+          ${e(meta.label)}
         </span>
       `;
     } else {
-      accion = `
+      accionEstado = `
         <button
           type="button"
           class="badge badge--${meta.clase}"
-          data-cycle="${fila.id}"
+          data-cycle="${consulta.id}"
           title="Cambiar estado"
         >
           <span class="badge__dot"></span>
-          ${meta.label}
+          ${e(meta.label)}
         </button>
       `;
+    }
+
+    const accionesClinicas = [];
+
+    if (
+      status !== 'done' &&
+      status !== 'cancelado'
+    ) {
+      accionesClinicas.push(`
+        <button
+          type="button"
+          class="btn btn-sm btn-exito"
+          data-completar="${consulta.id}"
+        >
+          Completar
+        </button>
+      `);
+    }
+
+    if (notasClinicasConsulta(consulta)) {
+      accionesClinicas.push(`
+        <button
+          type="button"
+          class="btn btn-sm btn-info"
+          data-historial="${consulta.id}"
+        >
+          Ver historial
+        </button>
+      `);
     }
 
     return `
       <div class="tabla__fila">
         <div>
           <span class="tabla__cola">
-            ${fila.queue}
+            ${e(String(fila.queue || '—'))}
           </span>
         </div>
 
         <div class="tabla__hora">
-          ${e(fila.time)}
+          ${e(horaConsulta(consulta))}
         </div>
 
         <div class="tabla__cliente">
-          ${e(fila.cliente)}
+          ${e(consulta.cliente || 'Sin cliente')}
         </div>
 
         <div class="tabla__mascota">
@@ -2066,15 +2288,16 @@ function tplTarjetaTestimonio(resena) {
             🐾
           </span>
 
-          ${e(fila.mascota)}
+          ${e(nombreMascotaConsulta(consulta))}
         </div>
 
         <div class="tabla__motivo">
-          ${e(fila.motivo)}
+          ${e(consulta.motivo || 'Sin motivo')}
         </div>
 
-        <div>
-          ${accion}
+        <div class="tabla__acciones">
+          ${accionEstado}
+          ${accionesClinicas.join('')}
         </div>
       </div>
     `;
@@ -2362,6 +2585,18 @@ function tplTarjetaTestimonio(resena) {
 
   function tplModalAdmin() {
     if (
+      estadoAdmin.consultaClinicaId !== null
+    ) {
+      return tplCompletarConsultaForm();
+    }
+
+    if (
+      estadoAdmin.historialConsultaId !== null
+    ) {
+      return tplHistorialClinico();
+    }
+
+    if (
       estadoAdmin.confirmId !== null
     ) {
       return tplConfirmarForm();
@@ -2374,13 +2609,222 @@ function tplTarjetaTestimonio(resena) {
     return '';
   }
 
+  /**
+   * Formulario para completar una consulta y guardar notas clínicas.
+   */
+  function tplCompletarConsultaForm() {
+    const consulta = obtenerConsultaAdmin(
+      estadoAdmin.consultaClinicaId
+    );
+
+    if (!consulta) {
+      return '';
+    }
+
+    const notas =
+      notasClinicasConsulta(consulta) || {};
+
+    const error = estadoAdmin.errorClinico
+      ? `
+        <div class="resena-error" role="alert">
+          ⚠ ${e(estadoAdmin.errorClinico)}
+        </div>
+      `
+      : '';
+
+    return `
+      <div class="modal-overlay">
+        <div class="modal modal--form modal--clinico">
+          <div class="modal__blob"></div>
+
+          <div style="position:relative;">
+            <h3 class="modal__titulo">
+              Completar consulta
+            </h3>
+
+            <p class="modal__texto">
+              Registra las notas clínicas de
+              ${e(nombreMascotaConsulta(consulta))}.
+            </p>
+
+            <form
+              class="notas-form"
+              data-form-clinico="${consulta.id}"
+            >
+              <div class="form-grupo">
+                <label for="clinica-peso">
+                  Peso (kg)
+                </label>
+
+                <input
+                  id="clinica-peso"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value="${e(String(notas.peso || ''))}"
+                  data-clinica-peso
+                  required
+                >
+              </div>
+
+              <div class="form-grupo">
+                <label for="clinica-sintomas">
+                  Síntomas
+                </label>
+
+                <textarea
+                  id="clinica-sintomas"
+                  rows="3"
+                  data-clinica-sintomas
+                  required
+                >${e(notas.sintomas || '')}</textarea>
+              </div>
+
+              <div class="form-grupo">
+                <label for="clinica-diagnostico">
+                  Diagnóstico
+                </label>
+
+                <textarea
+                  id="clinica-diagnostico"
+                  rows="3"
+                  data-clinica-diagnostico
+                  required
+                >${e(notas.diagnostico || '')}</textarea>
+              </div>
+
+              <div class="form-grupo">
+                <label for="clinica-tratamiento">
+                  Tratamiento
+                </label>
+
+                <textarea
+                  id="clinica-tratamiento"
+                  rows="3"
+                  data-clinica-tratamiento
+                  required
+                >${e(notas.tratamiento || '')}</textarea>
+              </div>
+
+              ${error}
+
+              <div class="form-acciones">
+                <button
+                  type="submit"
+                  class="btn btn-exito"
+                >
+                  Guardar
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-cancelar"
+                  data-cerrar-modal
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Modal con todas las notas clínicas asociadas a la mascota.
+   */
+  function tplHistorialClinico() {
+    const consulta = obtenerConsultaAdmin(
+      estadoAdmin.historialConsultaId
+    );
+
+    if (!consulta) {
+      return '';
+    }
+
+    const historial = historialConsulta(
+      consulta
+    );
+
+    const contenido = historial.length
+      ? historial.map((item) => {
+          const notas =
+            notasClinicasConsulta(item) || {};
+
+          return `
+            <div class="historial-entrada">
+              <div class="historial-fecha">
+                ${e(fechaConsulta(item))}
+                —
+                ${e(horaConsulta(item))}
+              </div>
+
+              <div class="historial-campo">
+                <strong>Peso:</strong>
+                ${e(String(notas.peso || 'No indicado'))}
+                ${notas.peso ? ' kg' : ''}
+              </div>
+
+              <div class="historial-campo">
+                <strong>Síntomas:</strong>
+                ${e(notas.sintomas || 'No indicados')}
+              </div>
+
+              <div class="historial-campo">
+                <strong>Diagnóstico:</strong>
+                ${e(notas.diagnostico || 'No indicado')}
+              </div>
+
+              <div class="historial-campo">
+                <strong>Tratamiento:</strong>
+                ${e(notas.tratamiento || 'No indicado')}
+              </div>
+            </div>
+          `;
+        }).join('')
+      : `
+        <div class="vacio">
+          No hay notas clínicas registradas.
+        </div>
+      `;
+
+    return `
+      <div class="modal-overlay">
+        <div class="modal modal--historial">
+          <div class="modal__blob"></div>
+
+          <div style="position:relative;">
+            <h3 class="modal__titulo">
+              Historial clínico
+            </h3>
+
+            <p class="modal__texto">
+              ${e(nombreMascotaConsulta(consulta))}
+            </p>
+
+            <div class="historial-lista">
+              ${contenido}
+            </div>
+
+            <button
+              type="button"
+              class="btn-primario btn-primario--plano"
+              style="margin-top:22px;"
+              data-cerrar-modal
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function tplConfirmarForm() {
-    const consulta =
-      Consultas.listar().find(
-        (item) =>
-          item.id ===
-          estadoAdmin.confirmId
-      );
+    const consulta = obtenerConsultaAdmin(
+      estadoAdmin.confirmId
+    );
 
     if (!consulta) {
       return '';
@@ -2574,11 +3018,167 @@ function tplTarjetaTestimonio(resena) {
   function abrirConfirmar(id) {
     estadoAdmin.confirmId = id;
     estadoAdmin.exito = null;
+    estadoAdmin.consultaClinicaId = null;
+    estadoAdmin.historialConsultaId = null;
+    estadoAdmin.errorClinico = null;
 
     DOM.montar(
       '#capa-modal',
       tplModalAdmin()
     );
+  }
+
+  function abrirFormularioCompletado(id) {
+    const consulta = obtenerConsultaAdmin(id);
+
+    if (!consulta) {
+      return;
+    }
+
+    const status = normalizarEstadoConsulta(
+      consulta
+    );
+
+    if (
+      status === 'done' ||
+      status === 'cancelado'
+    ) {
+      return;
+    }
+
+    estadoAdmin.confirmId = null;
+    estadoAdmin.exito = null;
+    estadoAdmin.historialConsultaId = null;
+    estadoAdmin.consultaClinicaId = consulta.id;
+    estadoAdmin.errorClinico = null;
+
+    DOM.montar(
+      '#capa-modal',
+      tplModalAdmin()
+    );
+  }
+
+  function abrirHistorialClinico(id) {
+    const consulta = obtenerConsultaAdmin(id);
+
+    if (!consulta) {
+      return;
+    }
+
+    estadoAdmin.confirmId = null;
+    estadoAdmin.exito = null;
+    estadoAdmin.consultaClinicaId = null;
+    estadoAdmin.historialConsultaId = consulta.id;
+    estadoAdmin.errorClinico = null;
+
+    DOM.montar(
+      '#capa-modal',
+      tplModalAdmin()
+    );
+  }
+
+  function guardarConsultaClinica(id) {
+    const consulta = obtenerConsultaAdmin(id);
+
+    if (!consulta) {
+      estadoAdmin.errorClinico =
+        'No se encontró la consulta seleccionada.';
+
+      DOM.montar(
+        '#capa-modal',
+        tplModalAdmin()
+      );
+
+      return;
+    }
+
+    const peso = DOM.sel(
+      '[data-clinica-peso]'
+    );
+
+    const sintomas = DOM.sel(
+      '[data-clinica-sintomas]'
+    );
+
+    const diagnostico = DOM.sel(
+      '[data-clinica-diagnostico]'
+    );
+
+    const tratamiento = DOM.sel(
+      '[data-clinica-tratamiento]'
+    );
+
+    const notas = {
+      peso: peso ? peso.value.trim() : '',
+      sintomas: sintomas
+        ? sintomas.value.trim()
+        : '',
+      diagnostico: diagnostico
+        ? diagnostico.value.trim()
+        : '',
+      tratamiento: tratamiento
+        ? tratamiento.value.trim()
+        : '',
+    };
+
+    if (
+      !notas.peso ||
+      !notas.sintomas ||
+      !notas.diagnostico ||
+      !notas.tratamiento
+    ) {
+      estadoAdmin.errorClinico =
+        'Completa todos los campos clínicos.';
+
+      DOM.montar(
+        '#capa-modal',
+        tplModalAdmin()
+      );
+
+      return;
+    }
+
+    if (typeof Consultas.completar !== 'function') {
+      estadoAdmin.errorClinico =
+        'El módulo de consultas no permite completar la cita.';
+
+      DOM.montar(
+        '#capa-modal',
+        tplModalAdmin()
+      );
+
+      return;
+    }
+
+    Consultas.completar(
+      consulta.id,
+      notas
+    );
+
+    const actualizada = obtenerConsultaAdmin(
+      consulta.id
+    );
+
+    if (
+      !actualizada ||
+      !notasClinicasConsulta(actualizada)
+    ) {
+      estadoAdmin.errorClinico =
+        'No fue posible guardar las notas clínicas.';
+
+      DOM.montar(
+        '#capa-modal',
+        tplModalAdmin()
+      );
+
+      return;
+    }
+
+    estadoAdmin.consultaClinicaId = null;
+    estadoAdmin.historialConsultaId = null;
+    estadoAdmin.errorClinico = null;
+
+    renderAdmin();
   }
 
   function confirmarConsulta(id) {
@@ -2606,10 +3206,13 @@ function tplTarjetaTestimonio(resena) {
       ? selectorHora.value
       : '';
 
+    const consulta = obtenerConsultaAdmin(id);
+
     const actualizada =
-      Consultas.confirmar(
-        id,
-        {
+      consulta
+        ? Consultas.confirmar(
+            consulta.id,
+            {
           date: dia
             ? dia.date
             : undefined,
@@ -2618,9 +3221,10 @@ function tplTarjetaTestimonio(resena) {
             ? dia.rank
             : undefined,
 
-          time: hora || undefined,
-        }
-      );
+              time: hora || undefined,
+            }
+          )
+        : null;
 
     if (actualizada) {
       Notificaciones.crear(
@@ -2637,6 +3241,9 @@ function tplTarjetaTestimonio(resena) {
   function cerrarModalAdmin() {
     estadoAdmin.confirmId = null;
     estadoAdmin.exito = null;
+    estadoAdmin.consultaClinicaId = null;
+    estadoAdmin.historialConsultaId = null;
+    estadoAdmin.errorClinico = null;
 
     DOM.montar(
       '#capa-modal',
@@ -2700,13 +3307,17 @@ function tplTarjetaTestimonio(resena) {
       'click',
       '[data-cycle]',
       (_evento, elemento) => {
-        Consultas.avanzarEstado(
-          Number(
-            elemento.getAttribute(
-              'data-cycle'
-            )
+        const consulta = obtenerConsultaAdmin(
+          elemento.getAttribute(
+            'data-cycle'
           )
         );
+
+        if (consulta) {
+          Consultas.avanzarEstado(
+            consulta.id
+          );
+        }
 
         renderAdmin();
       }
@@ -2731,10 +3342,34 @@ function tplTarjetaTestimonio(resena) {
       '[data-confirmar]',
       (_evento, elemento) => {
         abrirConfirmar(
-          Number(
-            elemento.getAttribute(
-              'data-confirmar'
-            )
+          elemento.getAttribute(
+            'data-confirmar'
+          )
+        );
+      }
+    );
+
+    DOM.delegar(
+      main,
+      'click',
+      '[data-completar]',
+      (_evento, elemento) => {
+        abrirFormularioCompletado(
+          elemento.getAttribute(
+            'data-completar'
+          )
+        );
+      }
+    );
+
+    DOM.delegar(
+      main,
+      'click',
+      '[data-historial]',
+      (_evento, elemento) => {
+        abrirHistorialClinico(
+          elemento.getAttribute(
+            'data-historial'
           )
         );
       }
@@ -2742,6 +3377,28 @@ function tplTarjetaTestimonio(resena) {
 
     const modal =
       DOM.sel('#capa-modal');
+
+    modal.addEventListener(
+      'submit',
+      (evento) => {
+        const formulario =
+          evento.target.closest(
+            '[data-form-clinico]'
+          );
+
+        if (!formulario) {
+          return;
+        }
+
+        evento.preventDefault();
+
+        guardarConsultaClinica(
+          formulario.getAttribute(
+            'data-form-clinico'
+          )
+        );
+      }
+    );
 
     modal.addEventListener(
       'click',
@@ -2753,10 +3410,8 @@ function tplTarjetaTestimonio(resena) {
 
         if (botonConfirmar) {
           confirmarConsulta(
-            Number(
-              botonConfirmar.getAttribute(
-                'data-confirmar-ok'
-              )
+            botonConfirmar.getAttribute(
+              'data-confirmar-ok'
             )
           );
 
@@ -2893,144 +3548,3 @@ function tplTarjetaTestimonio(resena) {
     init
   );
 })();
-function initAdmin() {
-  const main = $("main");
-  if (!main) return;
-
-  renderConsultas(main);
-}
-
-function renderConsultas(container) {
-  container.innerHTML = "";
-
-  const consultas = Consultas.listar();
-  if (!consultas.length) {
-    container.append(crear("p", { className: "vacio" }, ["No hay consultas registradas."]));
-    return;
-  }
-
-  const tabla = crear("table", { className: "tabla-consultas" }, [
-    crear("thead", {}, [
-      crear("tr", {}, [
-        crear("th", {}, ["Mascota"]),
-        crear("th", {}, ["Fecha"]),
-        crear("th", {}, ["Horario"]),
-        crear("th", {}, ["Estado"]),
-        crear("th", {}, ["Acciones"])
-      ])
-    ]),
-    crear("tbody", {}, consultas.map(c => filaConsulta(c)))
-  ]);
-
-  container.append(tabla);
-}
-
-function filaConsulta(consulta) {
-  const mascota = Mascotas.obtener(consulta.mascotaId);
-  const nombreMascota = mascota ? mascota.nombre : "Desconocida";
-
-  const badge = crear("span", {
-    className: `badge badge-${consulta.estado}`
-  }, [consulta.estado]);
-
-  const acciones = crear("td", { className: "acciones" });
-
-  if (consulta.estado !== "completado" && consulta.estado !== "cancelada") {
-    acciones.append(
-      crear("button", {
-        className: "btn btn-sm btn-exito",
-        onClick: () => abrirFormularioCompletado(consulta)
-      }, ["Completar"])
-    );
-  }
-
-  if (consulta.notasClinicas) {
-    acciones.append(
-      crear("button", {
-        className: "btn btn-sm btn-info",
-        onClick: () => verHistorial(consulta)
-      }, ["Ver historial"])
-    );
-  }
-
-  return crear("tr", {}, [
-    crear("td", {}, [nombreMascota]),
-    crear("td", {}, [consulta.fecha]),
-    crear("td", {}, [consulta.horario]),
-    crear("td", {}, [badge]),
-    acciones
-  ]);
-}
-
-function abrirFormularioCompletado(consulta) {
-  const mascota = Mascotas.obtener(consulta.mascotaId);
-  const nombreMascota = mascota ? mascota.nombre : "Desconocida";
-
-  const form = crear("form", { className: "notas-form", onSubmit: (e) => {
-    e.preventDefault();
-    const peso = form.querySelector("[name=peso]").value;
-    const sintomas = form.querySelector("[name=sintomas]").value;
-    const diagnostico = form.querySelector("[name=diagnostico]").value;
-    const tratamiento = form.querySelector("[name=tratamiento]").value;
-
-    Consultas.completar(consulta.id, { peso, sintomas, diagnostico, tratamiento });
-    m.cerrar();
-    renderConsultas($("main"));
-  }}, [
-    crear("div", { className: "form-grupo" }, [
-      crear("label", {}, ["Peso (kg)"]),
-      crear("input", { type: "number", name: "peso", step: "0.1", min: "0", required: "required" })
-    ]),
-    crear("div", { className: "form-grupo" }, [
-      crear("label", {}, ["Síntomas"]),
-      crear("textarea", { name: "sintomas", rows: "3", required: "required" })
-    ]),
-    crear("div", { className: "form-grupo" }, [
-      crear("label", {}, ["Diagnóstico"]),
-      crear("textarea", { name: "diagnostico", rows: "3", required: "required" })
-    ]),
-    crear("div", { className: "form-grupo" }, [
-      crear("label", {}, ["Tratamiento"]),
-      crear("textarea", { name: "tratamiento", rows: "3", required: "required" })
-    ]),
-    crear("div", { className: "form-acciones" }, [
-      crear("button", { type: "submit", className: "btn btn-exito" }, ["Guardar"]),
-      crear("button", { type: "button", className: "btn btn-cancelar", onClick: () => m.cerrar() }, ["Cancelar"])
-    ])
-  ]);
-
-  const m = modal(`Completar consulta — ${nombreMascota}`, form);
-}
-
-function verHistorial(consulta) {
-  const historial = Consultas.historialMascota(consulta.mascotaId);
-  const mascota = Mascotas.obtener(consulta.mascotaId);
-  const nombreMascota = mascota ? mascota.nombre : "Desconocida";
-
-  const lista = crear("div", { className: "historial-lista" }, historial.map(c => {
-    const nc = c.notasClinicas;
-    return crear("div", { className: "historial-entrada" }, [
-      crear("div", { className: "historial-fecha" }, [`${c.fecha} — ${c.horario}`]),
-      crear("div", { className: "historial-campo" }, [
-        crear("strong", {}, ["Peso: "]),
-        nc.peso, " kg"
-      ]),
-      crear("div", { className: "historial-campo" }, [
-        crear("strong", {}, ["Síntomas: "]),
-        nc.sintomas
-      ]),
-      crear("div", { className: "historial-campo" }, [
-        crear("strong", {}, ["Diagnóstico: "]),
-        nc.diagnostico
-      ]),
-      crear("div", { className: "historial-campo" }, [
-        crear("strong", {}, ["Tratamiento: "]),
-        nc.tratamiento
-      ])
-    ]);
-  }));
-
-  modal(`Historial clínico — ${nombreMascota}`, lista);
-}
-
-document.addEventListener("DOMContentLoaded", initAdmin);

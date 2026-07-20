@@ -4,11 +4,16 @@
  * Todos los módulos deben utilizar este objeto en lugar
  * de acceder directamente a localStorage.
  *
- * Compatibilidad:
- *   - leer / guardar / eliminar
- *   - obtener / listar / guardarItem
+ * Métodos disponibles:
+ *   - leer
+ *   - obtener
+ *   - guardar
+ *   - listar
+ *   - guardarItem
+ *   - eliminar
  *
- * Todas las claves se almacenan con el prefijo "vet:".
+ * Las claves nuevas se almacenan con el prefijo "vet:".
+ * También se pueden leer datos antiguos guardados sin prefijo.
  */
 const Storage = (() => {
   'use strict';
@@ -16,30 +21,47 @@ const Storage = (() => {
   const PREFIJO = 'vet:';
 
   /**
-   * Construye la clave real utilizada en localStorage.
+   * Normaliza la clave recibida.
    */
-  function claveCompleta(clave) {
-    return PREFIJO + String(clave || '');
+  function normalizarClave(clave) {
+    return String(clave ?? '').trim();
   }
 
   /**
-   * Lee una clave almacenada.
+   * Construye la clave utilizada actualmente.
    *
-   * Devuelve porDefecto cuando:
-   *   - La clave no existe.
-   *   - El contenido no es JSON válido.
-   *   - Ocurre un error de acceso.
+   * Evita duplicar el prefijo cuando se recibe,
+   * por ejemplo, "vet:consultas".
    */
-  function leer(clave, porDefecto = null) {
+  function claveCompleta(clave) {
+    const valor = normalizarClave(clave);
+
+    return valor.startsWith(PREFIJO)
+      ? valor
+      : `${PREFIJO}${valor}`;
+  }
+
+  /**
+   * Devuelve la versión antigua de una clave,
+   * sin el prefijo "vet:".
+   */
+  function claveAnterior(clave) {
+    const valor = normalizarClave(clave);
+
+    return valor.startsWith(PREFIJO)
+      ? valor.slice(PREFIJO.length)
+      : valor;
+  }
+
+  /**
+   * Convierte un contenido JSON almacenado.
+   */
+  function convertirJSON(crudo, porDefecto) {
+    if (crudo === null) {
+      return porDefecto;
+    }
+
     try {
-      const crudo = localStorage.getItem(
-        claveCompleta(clave)
-      );
-
-      if (crudo == null) {
-        return porDefecto;
-      }
-
       return JSON.parse(crudo);
     } catch (_) {
       return porDefecto;
@@ -47,17 +69,84 @@ const Storage = (() => {
   }
 
   /**
-   * Alias compatible con la otra rama.
+   * Lee una clave almacenada.
+   *
+   * Primero busca la clave actual con prefijo.
+   * Si no existe, busca la clave antigua sin prefijo.
+   *
+   * Cuando encuentra datos antiguos, crea además una
+   * copia utilizando el formato nuevo.
    */
-  function obtener(clave) {
-    return leer(clave, null);
+  function leer(clave, porDefecto = null) {
+    try {
+      const claveNueva = claveCompleta(clave);
+
+      const crudoNuevo =
+        localStorage.getItem(claveNueva);
+
+      if (crudoNuevo !== null) {
+        return convertirJSON(
+          crudoNuevo,
+          porDefecto
+        );
+      }
+
+      const claveVieja =
+        claveAnterior(clave);
+
+      const crudoAnterior =
+        localStorage.getItem(claveVieja);
+
+      if (crudoAnterior === null) {
+        return porDefecto;
+      }
+
+      const valorAnterior =
+        convertirJSON(
+          crudoAnterior,
+          porDefecto
+        );
+
+      /*
+       * Migra silenciosamente los datos antiguos
+       * al formato con prefijo.
+       */
+      try {
+        localStorage.setItem(
+          claveNueva,
+          JSON.stringify(valorAnterior)
+        );
+      } catch (_) {
+        /*
+         * La lectura sigue siendo válida aunque
+         * la migración no pueda realizarse.
+         */
+      }
+
+      return valorAnterior;
+    } catch (_) {
+      return porDefecto;
+    }
+  }
+
+  /**
+   * Alias de leer compatible con la otra rama.
+   */
+  function obtener(
+    clave,
+    porDefecto = null
+  ) {
+    return leer(
+      clave,
+      porDefecto
+    );
   }
 
   /**
    * Guarda cualquier valor serializable.
    *
-   * Devuelve true si se guardó correctamente
-   * y false si ocurrió un error.
+   * Los nuevos datos siempre se guardan con
+   * el prefijo "vet:".
    */
   function guardar(clave, valor) {
     try {
@@ -75,11 +164,14 @@ const Storage = (() => {
   /**
    * Devuelve una colección almacenada.
    *
-   * Si la clave no existe o no contiene un arreglo,
-   * devuelve un arreglo vacío.
+   * Si la clave no existe o el contenido no es
+   * un arreglo, devuelve un arreglo vacío.
    */
   function listar(clave) {
-    const valor = leer(clave, []);
+    const valor = leer(
+      clave,
+      []
+    );
 
     return Array.isArray(valor)
       ? valor
@@ -87,21 +179,33 @@ const Storage = (() => {
   }
 
   /**
-   * Inserta o actualiza un elemento dentro de una colección.
+   * Inserta o actualiza un elemento dentro
+   * de una colección.
    *
-   * - Si ya existe un elemento con el mismo id,
-   *   mezcla sus propiedades.
-   * - Si no existe, agrega un nuevo elemento.
+   * Si encuentra el mismo identificador:
+   *   - Conserva las propiedades anteriores.
+   *   - Sobrescribe solamente las nuevas.
    *
-   * Devuelve el elemento finalmente almacenado
-   * o null si no fue posible guardar.
+   * Si no existe:
+   *   - Agrega el elemento a la colección.
    */
-  function guardarItem(clave, id, item = {}) {
+  function guardarItem(
+    clave,
+    id,
+    item = {}
+  ) {
     const items = listar(clave);
+
+    const identificador =
+      item.id !== null &&
+      item.id !== undefined
+        ? item.id
+        : id;
 
     const indice = items.findIndex(
       (elemento) =>
-        String(elemento.id) === String(id)
+        String(elemento.id) ===
+        String(identificador)
     );
 
     let resultado;
@@ -110,20 +214,14 @@ const Storage = (() => {
       resultado = {
         ...items[indice],
         ...item,
-        id:
-          item.id != null
-            ? item.id
-            : items[indice].id,
+        id: identificador,
       };
 
       items[indice] = resultado;
     } else {
       resultado = {
         ...item,
-        id:
-          item.id != null
-            ? item.id
-            : id,
+        id: identificador,
       };
 
       items.push(resultado);
@@ -140,12 +238,17 @@ const Storage = (() => {
   }
 
   /**
-   * Elimina una clave completa.
+   * Elimina tanto la clave nueva con prefijo
+   * como la versión antigua sin prefijo.
    */
   function eliminar(clave) {
     try {
       localStorage.removeItem(
         claveCompleta(clave)
+      );
+
+      localStorage.removeItem(
+        claveAnterior(clave)
       );
 
       return true;

@@ -1,18 +1,19 @@
 /**
  * Módulo de mascotas.
  *
- * Conserva la funcionalidad existente:
- *   - Registrar nombre, motivo y usuarioId.
- *
- * Agrega la funcionalidad de la otra rama:
- *   - Identificador único.
- *   - Especie.
- *   - Raza.
- *   - clienteId.
- *   - Obtener una mascota por id.
+ * Compatibilidad con ambas ramas:
+ *   - id
+ *   - nombre
+ *   - motivo
+ *   - especie
+ *   - raza
+ *   - usuarioId
+ *   - clienteId
  *
  * Interfaz pública:
- *   registrar, listar, obtener.
+ *   - registrar
+ *   - listar
+ *   - obtener
  */
 const Mascotas = (() => {
   'use strict';
@@ -23,14 +24,23 @@ const Mascotas = (() => {
    * Genera un identificador único para una mascota.
    */
   function generarId() {
-    return `m${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const aleatorio = Math.floor(
+      Math.random() * 100000
+    );
+
+    return `m${Date.now()}${aleatorio}`;
   }
 
   /**
-   * Normaliza una mascota almacenada.
-   *
-   * Esto permite seguir usando registros antiguos
-   * que todavía no tenían id, especie, raza o clienteId.
+   * Compara identificadores numéricos o de texto.
+   */
+  function mismoId(valorA, valorB) {
+    return String(valorA) === String(valorB);
+  }
+
+  /**
+   * Normaliza una mascota proveniente de cualquiera
+   * de las dos ramas.
    */
   function normalizar(mascota = {}) {
     const usuarioId =
@@ -49,20 +59,25 @@ const Mascotas = (() => {
       ...mascota,
 
       id:
-        mascota.id ||
-        generarId(),
+        mascota.id != null
+          ? mascota.id
+          : generarId(),
 
-      nombre:
-        String(mascota.nombre || '').trim(),
+      nombre: String(
+        mascota.nombre || ''
+      ).trim(),
 
-      motivo:
-        String(mascota.motivo || '').trim(),
+      motivo: String(
+        mascota.motivo || ''
+      ).trim(),
 
-      especie:
-        String(mascota.especie || '').trim(),
+      especie: String(
+        mascota.especie || ''
+      ).trim(),
 
-      raza:
-        String(mascota.raza || '').trim(),
+      raza: String(
+        mascota.raza || ''
+      ).trim(),
 
       usuarioId,
       clienteId,
@@ -70,17 +85,26 @@ const Mascotas = (() => {
   }
 
   /**
-   * Guarda el listado completo de mascotas.
+   * Guarda la colección completa de mascotas.
    */
   function persistir(mascotas) {
-    Storage.guardar(CLAVE, mascotas);
+    return Storage.guardar(
+      CLAVE,
+      mascotas
+    );
   }
 
   /**
-   * Devuelve todas las mascotas registradas.
+   * Devuelve todas las mascotas normalizadas.
+   *
+   * También actualiza registros antiguos que no
+   * tenían los campos incorporados posteriormente.
    */
   function listar() {
-    const almacenadas = Storage.leer(CLAVE, []);
+    const almacenadas =
+      typeof Storage.listar === 'function'
+        ? Storage.listar(CLAVE)
+        : Storage.leer(CLAVE, []);
 
     if (!Array.isArray(almacenadas)) {
       persistir([]);
@@ -89,21 +113,21 @@ const Mascotas = (() => {
 
     let huboCambios = false;
 
-    const normalizadas = almacenadas.map((mascota) => {
-      const normalizada = normalizar(mascota);
+    const normalizadas = almacenadas.map(
+      (mascota) => {
+        const normalizada =
+          normalizar(mascota);
 
-      if (
-        !mascota.id ||
-        mascota.usuarioId === undefined ||
-        mascota.clienteId === undefined ||
-        mascota.especie === undefined ||
-        mascota.raza === undefined
-      ) {
-        huboCambios = true;
+        if (
+          JSON.stringify(normalizada) !==
+          JSON.stringify(mascota)
+        ) {
+          huboCambios = true;
+        }
+
+        return normalizada;
       }
-
-      return normalizada;
-    });
+    );
 
     if (huboCambios) {
       persistir(normalizadas);
@@ -116,12 +140,14 @@ const Mascotas = (() => {
    * Obtiene una mascota por su identificador.
    */
   function obtener(id) {
-    const mascotaId = String(id || '');
+    if (id === null || id === undefined) {
+      return null;
+    }
 
     return (
       listar().find(
         (mascota) =>
-          String(mascota.id) === mascotaId
+          mismoId(mascota.id, id)
       ) || null
     );
   }
@@ -129,63 +155,60 @@ const Mascotas = (() => {
   /**
    * Registra una mascota.
    *
-   * Admite ambos formatos:
-   *
-   * Formato actual:
+   * Formato utilizado por la rama actual:
    * {
    *   nombre,
    *   motivo,
    *   usuarioId
    * }
    *
-   * Formato de la otra rama:
+   * Formato utilizado por la otra rama:
    * {
    *   nombre,
    *   especie,
    *   raza,
    *   clienteId
    * }
+   *
+   * Si se proporciona un id existente, actualiza
+   * el registro sin perder sus propiedades anteriores.
    */
   function registrar(datos = {}) {
-    const usuarioId =
-      datos.usuarioId != null
-        ? datos.usuarioId
-        : datos.clienteId != null
-          ? datos.clienteId
-          : null;
-
-    const mascota = {
-      id:
-        datos.id ||
-        generarId(),
-
-      nombre:
-        String(datos.nombre || '').trim(),
-
-      motivo:
-        String(datos.motivo || '').trim(),
-
-      especie:
-        String(datos.especie || '').trim(),
-
-      raza:
-        String(datos.raza || '').trim(),
-
-      usuarioId,
-
-      clienteId:
-        datos.clienteId != null
-          ? datos.clienteId
-          : usuarioId,
-    };
-
     const mascotas = listar();
 
-    mascotas.push(mascota);
+    const id =
+      datos.id != null
+        ? datos.id
+        : generarId();
 
-    persistir(mascotas);
+    const indice = mascotas.findIndex(
+      (mascota) =>
+        mismoId(mascota.id, id)
+    );
 
-    return mascota;
+    const datosAnteriores =
+      indice >= 0
+        ? mascotas[indice]
+        : {};
+
+    const mascota = normalizar({
+      ...datosAnteriores,
+      ...datos,
+      id,
+    });
+
+    if (indice >= 0) {
+      mascotas[indice] = mascota;
+    } else {
+      mascotas.push(mascota);
+    }
+
+    const guardado =
+      persistir(mascotas);
+
+    return guardado
+      ? mascota
+      : null;
   }
 
   return {

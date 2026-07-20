@@ -2,11 +2,26 @@
    Compatibilidad — Modal DOM, formularios clínicos y botones
    ============================================================ */
 
-/*
- * El modal creado mediante DOM.modal utiliza las clases
- * modal-header y modal-body. Se aprovecha el diseño principal
- * de .modal y .modal-overlay sin redefinirlos.
- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+  width: 90%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: var(--superficie, #fff);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
 
 .modal-header {
   position: relative;
@@ -15,16 +30,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin: -8px -4px 20px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--borde);
+  margin: 0;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--borde, #e5e7eb);
   text-align: left;
 }
 
 .modal-header h3 {
   margin: 0;
-  color: var(--color-profundo);
-  font-family: var(--fuente-titulo);
+  color: var(--color-profundo, #163844);
+  font-family: var(--fuente-titulo, inherit);
   font-size: 22px;
   font-weight: 600;
   line-height: 1.25;
@@ -47,14 +62,14 @@
   line-height: 1;
   cursor: pointer;
   transition:
-    color .15s ease,
-    background .15s ease,
-    transform .12s ease;
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.12s ease;
 }
 
 .modal-cerrar:hover {
   background: #dcecf3;
-  color: var(--color-profundo);
+  color: var(--color-profundo, #163844);
   transform: translateY(-1px);
 }
 
@@ -63,13 +78,14 @@
 }
 
 .modal-cerrar:focus-visible {
-  outline: 3px solid rgba(0, 180, 216, .25);
+  outline: 3px solid rgba(0, 180, 216, 0.25);
   outline-offset: 2px;
 }
 
 .modal-body {
   position: relative;
   z-index: 1;
+  padding: 20px;
   text-align: left;
 }
 
@@ -104,17 +120,17 @@
   padding: 11px 13px;
   border: 1.5px solid #d6eef5;
   border-radius: 12px;
-  background: var(--superficie-suave);
-  color: var(--color-profundo);
-  font-family: var(--fuente-texto);
+  background: var(--superficie-suave, #f7fbfd);
+  color: var(--color-profundo, #163844);
+  font-family: var(--fuente-texto, inherit);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.45;
   outline: none;
   transition:
-    border-color .15s ease,
-    background .15s ease,
-    box-shadow .15s ease;
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .form-grupo textarea {
@@ -125,9 +141,9 @@
 .form-grupo input:focus,
 .form-grupo textarea:focus,
 .form-grupo select:focus {
-  border-color: var(--color-acento);
+  border-color: var(--color-acento, #00b4d8);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(0, 180, 216, .12);
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.12);
 }
 
 .form-grupo input:invalid:not(:placeholder-shown),
@@ -157,15 +173,15 @@
   padding: 9px 15px;
   border: none;
   border-radius: 10px;
-  font-family: var(--fuente-texto);
+  font-family: var(--fuente-texto, inherit);
   font-size: 13px;
   font-weight: 800;
   line-height: 1;
   cursor: pointer;
   transition:
-    transform .12s ease,
-    filter .12s ease,
-    box-shadow .12s ease;
+    transform 0.12s ease,
+    filter 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .btn:hover {
@@ -178,7 +194,7 @@
 }
 
 .btn:focus-visible {
-  outline: 3px solid rgba(0, 180, 216, .25);
+  outline: 3px solid rgba(0, 180, 216, 0.25);
   outline-offset: 2px;
 }
 
@@ -192,7 +208,7 @@
 .btn-exito {
   background: #16a34a;
   color: #fff;
-  box-shadow: 0 8px 18px -11px rgba(22, 163, 74, .8);
+  box-shadow: 0 8px 18px -11px rgba(22, 163, 74, 0.8);
 }
 
 .btn-exito:hover {
@@ -200,9 +216,9 @@
 }
 
 .btn-info {
-  background: var(--color-primario);
+  background: var(--color-primario, #0077b6);
   color: #fff;
-  box-shadow: 0 8px 18px -11px rgba(0, 119, 182, .8);
+  box-shadow: 0 8px 18px -11px rgba(0, 119, 182, 0.8);
 }
 
 .btn-info:hover {
@@ -216,27 +232,17 @@
 
 .btn-cancelar:hover {
   background: #d6e7ee;
-  color: var(--color-profundo);
+  color: var(--color-profundo, #163844);
 }
 
 /* ============================================================
    Ajustes para modales con contenido extenso
    ============================================================ */
 
-.modal:has(.modal-body) {
-  max-width: 520px;
-  max-height: 88vh;
-  overflow-y: auto;
-}
-
 .modal:has(.historial-lista) {
   max-width: 620px;
 }
 
-/*
- * Fallback para navegadores que no soporten :has().
- * DOM.modal puede recibir esta clase mediante claseModal.
- */
 .modal--clinico {
   max-width: 520px;
   max-height: 88vh;
@@ -250,34 +256,42 @@
 }
 
 /* ============================================================
-   Tema oscuro para componentes añadidos
+   Tema oscuro
    ============================================================ */
 
+html[data-tema="oscuro"] .modal {
+  background: var(--superficie, #17242b);
+}
+
 html[data-tema="oscuro"] .modal-header {
-  border-bottom-color: rgba(255, 255, 255, .1);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 html[data-tema="oscuro"] .modal-header h3 {
-  color: var(--color-profundo);
+  color: var(--color-profundo, #f1f5f9);
 }
 
 html[data-tema="oscuro"] .modal-cerrar {
-  background: var(--superficie-suave);
-  color: var(--texto-tenue);
+  background: var(--superficie-suave, #23343d);
+  color: var(--texto-tenue, #cbd5e1);
+}
+
+html[data-tema="oscuro"] .form-grupo label {
+  color: var(--texto, #e2e8f0);
 }
 
 html[data-tema="oscuro"] .form-grupo input,
 html[data-tema="oscuro"] .form-grupo textarea,
 html[data-tema="oscuro"] .form-grupo select {
-  background: var(--superficie-suave);
-  color: var(--color-profundo);
-  border-color: var(--borde);
+  background: var(--superficie-suave, #23343d);
+  color: var(--color-profundo, #f1f5f9);
+  border-color: var(--borde, #41535d);
 }
 
 html[data-tema="oscuro"] .form-grupo input:focus,
 html[data-tema="oscuro"] .form-grupo textarea:focus,
 html[data-tema="oscuro"] .form-grupo select:focus {
-  background: var(--superficie);
+  background: var(--superficie, #17242b);
 }
 
 /* ============================================================
@@ -285,12 +299,26 @@ html[data-tema="oscuro"] .form-grupo select:focus {
    ============================================================ */
 
 @media (max-width: 520px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 92vh;
+  }
+
   .modal-header {
     align-items: flex-start;
+    padding: 16px;
   }
 
   .modal-header h3 {
     font-size: 19px;
+  }
+
+  .modal-body {
+    padding: 16px;
   }
 
   .form-acciones {

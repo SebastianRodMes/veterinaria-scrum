@@ -16,6 +16,7 @@
  *   crear
  *   modal
  */
+
 const DOM = (() => {
   'use strict';
 
@@ -23,14 +24,22 @@ const DOM = (() => {
    * Devuelve el primer elemento que coincide con el selector.
    */
   function sel(selector, raiz = document) {
+    if (!selector || !raiz) {
+      return null;
+    }
+
     return raiz.querySelector(selector);
   }
 
   /**
-   * Devuelve todos los elementos que coinciden
-   * con el selector como arreglo.
+   * Devuelve todos los elementos que coinciden con el selector
+   * como un arreglo.
    */
   function selTodos(selector, raiz = document) {
+    if (!selector || !raiz) {
+      return [];
+    }
+
     return Array.from(
       raiz.querySelectorAll(selector)
     );
@@ -50,7 +59,7 @@ const DOM = (() => {
         : contenedor;
 
     if (nodo) {
-      nodo.innerHTML = html;
+      nodo.innerHTML = String(html ?? '');
     }
 
     return nodo;
@@ -85,30 +94,39 @@ const DOM = (() => {
     selector,
     handler
   ) {
-    if (!raiz) {
-      return;
+    if (
+      !raiz ||
+      !tipo ||
+      !selector ||
+      typeof handler !== 'function'
+    ) {
+      return null;
     }
+
+    const listener = (evento) => {
+      const target = evento.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const objetivo =
+        target.closest(selector);
+
+      if (
+        objetivo &&
+        raiz.contains(objetivo)
+      ) {
+        handler(evento, objetivo);
+      }
+    };
 
     raiz.addEventListener(
       tipo,
-      (evento) => {
-        const target = evento.target;
-
-        if (!(target instanceof Element)) {
-          return;
-        }
-
-        const objetivo =
-          target.closest(selector);
-
-        if (
-          objetivo &&
-          raiz.contains(objetivo)
-        ) {
-          handler(evento, objetivo);
-        }
-      }
+      listener
     );
+
+    return listener;
   }
 
   /**
@@ -116,10 +134,11 @@ const DOM = (() => {
    *
    * attrs admite:
    *   - className
+   *   - class
    *   - dataset
    *   - style como objeto
    *   - eventos con prefijo "on"
-   *   - propiedades comunes como value, checked, disabled
+   *   - propiedades comunes como value, checked y disabled
    *   - cualquier otro atributo HTML
    *
    * hijos puede contener:
@@ -137,7 +156,7 @@ const DOM = (() => {
     const elemento =
       document.createElement(tag);
 
-    Object.entries(attrs).forEach(
+    Object.entries(attrs || {}).forEach(
       ([clave, valor]) => {
         if (
           valor === null ||
@@ -147,7 +166,10 @@ const DOM = (() => {
           return;
         }
 
-        if (clave === 'className') {
+        if (
+          clave === 'className' ||
+          clave === 'class'
+        ) {
           elemento.className =
             String(valor);
 
@@ -157,8 +179,13 @@ const DOM = (() => {
         if (clave === 'dataset') {
           Object.entries(valor || {}).forEach(
             ([nombre, dato]) => {
-              elemento.dataset[nombre] =
-                String(dato);
+              if (
+                dato !== null &&
+                dato !== undefined
+              ) {
+                elemento.dataset[nombre] =
+                  String(dato);
+              }
             }
           );
 
@@ -189,21 +216,25 @@ const DOM = (() => {
           return;
         }
 
+        /*
+         * Se asignan como propiedades aquellos valores
+         * que dependen del estado interno del elemento.
+         */
         if (
-          clave in elemento &&
-          ![
-            'list',
-            'form',
-            'type',
+          [
+            'value',
+            'checked',
+            'selected',
+            'disabled',
+            'readOnly',
+            'multiple',
+            'required',
+            'textContent',
+            'innerHTML',
           ].includes(clave)
         ) {
-          try {
-            elemento[clave] = valor;
-            return;
-          } catch (_) {
-            // Si no se puede asignar como propiedad,
-            // se intenta como atributo.
-          }
+          elemento[clave] = valor;
+          return;
         }
 
         if (valor === true) {
@@ -222,6 +253,9 @@ const DOM = (() => {
       }
     );
 
+    /**
+     * Agrega recursivamente los hijos al elemento.
+     */
     function agregarHijo(hijo) {
       if (
         hijo === null ||
@@ -265,6 +299,7 @@ const DOM = (() => {
    * {
    *   cerrar,
    *   overlay,
+   *   ventana,
    *   contenido
    * }
    */
@@ -276,92 +311,105 @@ const DOM = (() => {
     const {
       usarHTML = false,
       cerrarAlFondo = true,
+      cerrarConEscape = true,
       claseModal = '',
     } = opciones;
 
-    const cuerpo =
-      crear(
-        'div',
-        {
-          className: 'modal-body',
-        }
-      );
+    const cuerpo = crear(
+      'div',
+      {
+        className: 'modal-body',
+      }
+    );
 
     if (contenido instanceof Node) {
       cuerpo.appendChild(contenido);
     } else if (usarHTML) {
       cuerpo.innerHTML =
-        String(contenido || '');
+        String(contenido ?? '');
     } else {
       cuerpo.textContent =
-        String(contenido || '');
+        String(contenido ?? '');
     }
 
-    const overlay =
-      crear(
-        'div',
-        {
-          className: 'modal-overlay',
-        }
-      );
+    const overlay = crear(
+      'div',
+      {
+        className: 'modal-overlay',
+      }
+    );
 
-    const ventana =
-      crear(
-        'div',
-        {
-          className:
-            `modal ${claseModal}`.trim(),
+    const ventana = crear(
+      'div',
+      {
+        className:
+          `modal ${claseModal}`.trim(),
 
-          role: 'dialog',
+        role: 'dialog',
 
-          'aria-modal': 'true',
+        'aria-modal': 'true',
 
-          'aria-label':
-            String(titulo || 'Ventana modal'),
-        },
-        [
-          crear(
-            'div',
-            {
-              className: 'modal-header',
-            },
-            [
-              crear(
-                'h3',
-                {},
-                [
-                  String(titulo || ''),
-                ]
-              ),
-
-              crear(
-                'button',
-                {
-                  type: 'button',
-                  className: 'modal-cerrar',
-                  'aria-label': 'Cerrar modal',
-                  onClick: () => cerrar(),
-                },
-                ['×']
-              ),
-            ]
+        'aria-label':
+          String(
+            titulo ||
+            'Ventana modal'
           ),
+      }
+    );
 
-          cuerpo,
-        ]
-      );
+    const encabezado = crear(
+      'div',
+      {
+        className: 'modal-header',
+      },
+      [
+        crear(
+          'h3',
+          {},
+          [
+            String(titulo || ''),
+          ]
+        ),
 
-    overlay.appendChild(ventana);
+        crear(
+          'button',
+          {
+            type: 'button',
+            className: 'modal-cerrar',
+            'aria-label': 'Cerrar modal',
+            onClick: () => cerrar(),
+          },
+          ['×']
+        ),
+      ]
+    );
 
+    ventana.append(
+      encabezado,
+      cuerpo
+    );
+
+    overlay.appendChild(
+      ventana
+    );
+
+    /**
+     * Cierra el modal y elimina sus eventos.
+     */
     function cerrar() {
-      document.removeEventListener(
-        'keydown',
-        manejarEscape
-      );
+      if (cerrarConEscape) {
+        document.removeEventListener(
+          'keydown',
+          manejarEscape
+        );
+      }
 
       overlay.remove();
     }
 
+    /**
+     * Cierra el modal al presionar Escape.
+     */
     function manejarEscape(evento) {
       if (evento.key === 'Escape') {
         cerrar();
@@ -379,10 +427,12 @@ const DOM = (() => {
       );
     }
 
-    document.addEventListener(
-      'keydown',
-      manejarEscape
-    );
+    if (cerrarConEscape) {
+      document.addEventListener(
+        'keydown',
+        manejarEscape
+      );
+    }
 
     document.body.appendChild(
       overlay
@@ -400,6 +450,7 @@ const DOM = (() => {
     return {
       cerrar,
       overlay,
+      ventana,
       contenido: cuerpo,
     };
   }
@@ -423,7 +474,10 @@ const DOM = (() => {
  * Equivalente a document.querySelector.
  */
 function $(selector, raiz = document) {
-  return DOM.sel(selector, raiz);
+  return DOM.sel(
+    selector,
+    raiz
+  );
 }
 
 /**
@@ -431,13 +485,20 @@ function $(selector, raiz = document) {
  * pero devuelve un arreglo.
  */
 function $$(selector, raiz = document) {
-  return DOM.selTodos(selector, raiz);
+  return DOM.selTodos(
+    selector,
+    raiz
+  );
 }
 
 /**
  * Alias global de DOM.crear.
  */
-function crear(tag, attrs = {}, hijos = []) {
+function crear(
+  tag,
+  attrs = {},
+  hijos = []
+) {
   return DOM.crear(
     tag,
     attrs,
